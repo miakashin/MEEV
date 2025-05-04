@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Virtual Assistant Services Website
 
 A modern, responsive website for a virtual assistant services company built with Next.js 13, React, and Tailwind CSS.
@@ -96,3 +97,6 @@ vercel
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details. 
+=======
+# MEEV
+>>>>>>> dc10e587436c385ab92c30ff4ef7b95826891b3b
