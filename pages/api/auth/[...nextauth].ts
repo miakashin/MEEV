@@ -21,8 +21,9 @@ export default NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        if (!credentials) return null;
+	const user = await prisma.user.findUnique({
+  		where: { email: credentials.email },
         });
         if (user && user.password && await compare(credentials.password, user.password)) {
           return user;
