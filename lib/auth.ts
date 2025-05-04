@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
-import { UserRole } from '@prisma/client'
 
 export async function hashPassword(password: string) {
   return await bcrypt.hash(password, 12)
