@@ -60,12 +60,12 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold text-center mb-8">Our Story</h2>
           <div className="prose prose-lg mx-auto">
             <p className="text-gray-600 mb-4">
-              Founded in 2020, VirtualPro emerged from a simple observation: talented
+              Founded in 2025, MEEV emerged from a simple observation: talented
               professionals were spending too much time on tasks that could be delegated,
               limiting their potential impact.
             </p>
             <p className="text-gray-600 mb-4">
-              We built VirtualPro to solve this problem by combining elite virtual
+              We built MEEV to solve this problem by combining elite virtual
               assistants with a scientific approach to delegation. Our unique methodology
               ensures that professionals can effectively delegate tasks while maintaining
               high standards of quality.
