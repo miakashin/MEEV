@@ -15,10 +15,10 @@ export default function AboutPage() {
       bio: 'With 15+ years in professional development, Emman ensures our VAs meet the highest standards of excellence.',
     },
     {
-      name: 'Alvin John M. Mejia',
-      role: 'IT Department',
+      name: 'Monaliza Dagale',
+      role: 'CMO',
       image: '/team/lisa.jpg',
-      bio: 'Games, Programming, and Website Developer.',
+      bio: 'Sample.',
     },
   ]
 
