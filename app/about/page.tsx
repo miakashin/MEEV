@@ -6,19 +6,24 @@ export default function AboutPage() {
       name: 'Lorenzo M. Mejia Jr.',
       role: 'CEO & Founder',
       image: '/team/sarah.jpg',
-      bio: 'Former executive assistant turned entrepreneur',
+      bio: `Enzo is the visionary founder and CEO of MEEV Assistant Services, a pioneering company for virtual solutions. What began as a side hassle project driven by Enzo's curiosity about remote assistant services eventually evolved into a disruptive force in the virtual world. Fueled by his desire to help small- and large-scale businesses save time, and focus on what truly matters, Enzo has built a strong partnership with clients from different business sectors.
+
+That curiosity-driven spirit led to the founding of a company now known for its high caliber virtual assistants. Enzo continues to lead with a hands-on approach, and always pushing his team, to be the first choice of virtual clients across the globe.`,
     },
     {
       name: 'Emmanuel Deocades',
       role: 'Vice President',
       image: '/team/michael.jpg',
-      bio: 'With 15+ years in professional development, Emman ensures our VAs meet the highest standards of excellence.',
+      bio: `With 10+ years of professional development and training experience, Emman ensures our VAs meet the highest standards of excellence. Emman is an accomplished Vice President exceptional background designing high-impact learning programs and quality assurance across customer service and operations team. Known for blending strategic vision with hands on execution, Emman
+has built a training frameworks that not only elevate performance but also align directly with business outcomes. A certified instructional designer and a Certified Six Sigma Yellow Belt, Emman has led enterprise-wide training transformations, and coached hundreds of team leaders on performance development. At his current company, Emman overseas global training initiatives and quality standards, ensuring that every employee- from onboarding to leadership-has the tools and feedback needed to succeed.`,
     },
     {
       name: 'Monaliza Dagale',
       role: 'CMO',
       image: '/team/lisa.jpg',
-      bio: 'Sample.',
+      bio: `Mona is a seasoned Operations Director with over a decade of experience leading high-performing teams and driving operational excellence across fast-paced industries. Known for a rare blend of strategic thinking and hand-on leadership, Mona is deeply passionate about optimizing performance through the power of the people. With a strong background in process improvement, and cross-functional collaboration, Mona has led major transformations that increased efficiency, reduced, cost and elevated employee engagement. She believes that sustainable performance starts with empowering people-creating a culture where accountability, clarity and continuous growth are the norm.
+
+Her passion for people development and operational excellence has made her a trusted advisor to executives and a respected mentor to learning professionals.`,
     },
   ]
 
@@ -35,11 +40,22 @@ export default function AboutPage() {
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="text-4xl font-bold mb-4">
-            Our Mission
+            Mission:
           </h1>
           <p className="text-xl text-gray-600">
-            We're on a mission to help ambitious professionals and entrepreneurs
-            scale their impact through world-class delegation and virtual assistance.
+            To empower businesses and individuals by providing reliable, efficient, and
+            personalized virtual assistant services, enabling them to focus on their core
+            objectives and achieve greater success.
+          </p>
+        </div>
+        {/* Vision Section */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h1 className="text-4xl font-bold mb-4">
+            Vision:
+          </h1>
+          <p className="text-xl text-gray-600">
+            To be a global leader in virtual support solutions, recognized for excellence,
+            innovation and commitment to enhancing organizational performance.
           </p>
         </div>
 
@@ -90,7 +106,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{member.name}</h3>
                 <p className="text-blue-600 mb-4">{member.role}</p>
-                <p className="text-gray-600">{member.bio}</p>
+                <p className="text-gray-600 whitespace-pre-line text-justify">{member.bio}</p>
               </div>
             ))}
           </div>
@@ -129,4 +145,4 @@ export default function AboutPage() {
       </div>
     </div>
   )
-} 
+}
