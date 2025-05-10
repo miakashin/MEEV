@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
-import formidable, { File as FormidableFile } from 'formidable'
+import formidable from 'formidable'
 import { readFile } from 'fs/promises'
 import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
 
 const prisma = new PrismaClient()
+
+// Custom type for Formidable file
+interface FormidableFile {
+  filepath: string
+  originalFilename?: string
+  mimetype?: string
+  size: number
+}
 
 // Custom type guard for Formidable files
 function isFormidableFile(file: any): file is FormidableFile {
@@ -50,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Configure Formidable with comprehensive safe options
-    const form = formidable({
+    const form = (formidable as any)({
       keepExtensions: true,
       maxFileSize: 10 * 1024 * 1024, // 10MB max file size
       maxFields: 20,
@@ -66,20 +74,24 @@ export async function POST(req: NextRequest) {
     const parsedData = await new Promise<{ fields: Record<string, string[]>; files: Record<string, FormidableFile | FormidableFile[]> }>((resolve, reject) => {
       // Wrap the parse method to ensure proper error handling
       try {
-        form.parse(req as any, (err, fields, files) => {
+        form.parse(req, (err: Error | null, fields: Record<string, string[]>, files: Record<string, FormidableFile | FormidableFile[]>) => {
           if (err) {
-            console.error('Form parsing error:', {
-              errorName: err.name,
-              errorMessage: err.message,
-              errorStack: err.stack,
-              errorCode: (err as any).code,
-              errorType: (err as any).type
-            })
+            const errorDetails: Record<string, any> = {
+              name: err.name,
+              message: err.message,
+              stack: err.stack
+            }
+
+            // Attempt to safely extract additional error properties
+            if ('code' in err) errorDetails.code = (err as { code: string }).code
+            if ('type' in err) errorDetails.type = (err as { type: string }).type
+
+            console.error('Form parsing error:', errorDetails)
             
             // More specific error handling
-            if ((err as any).code === 'ETOOLARGEMEDIA') {
+            if (errorDetails.code === 'ETOOLARGEMEDIA') {
               reject(new Error('File too large. Maximum file size is 10MB.'))
-            } else if ((err as any).code === 'ENOENT') {
+            } else if (errorDetails.code === 'ENOENT') {
               reject(new Error('Upload directory not found.'))
             } else {
               reject(err)
@@ -94,7 +106,13 @@ export async function POST(req: NextRequest) {
           // Safely log file details
           const processedFiles: Record<string, FormidableFile | FormidableFile[]> = {}
           Object.entries(files).forEach(([key, file]) => {
-            const processFile = (f: FormidableFile) => {
+            const processFile = (f: FormidableFile): FormidableFile => {
+              // Validate file object structure
+              if (!isFormidableFile(f)) {
+                console.warn(`Invalid file object for ${key}:`, f)
+                throw new Error(`Invalid file object for ${key}`)
+              }
+
               console.log(`File details for ${key}:`, {
                 originalFilename: f.originalFilename,
                 mimetype: f.mimetype,
@@ -104,11 +122,16 @@ export async function POST(req: NextRequest) {
               return f
             }
 
-            if (Array.isArray(file)) {
-              processedFiles[key] = file.map(processFile)
-              console.log(`Multiple files for ${key}:`, file.map(f => f.originalFilename))
-            } else {
-              processedFiles[key] = processFile(file)
+            try {
+              if (Array.isArray(file)) {
+                processedFiles[key] = file.map(processFile)
+                console.log(`Multiple files for ${key}:`, file.map(f => f.originalFilename))
+              } else {
+                processedFiles[key] = processFile(file)
+              }
+            } catch (error) {
+              console.error(`Error processing file ${key}:`, error)
+              // Optionally, you can choose to reject or handle the error differently
             }
           })
 
