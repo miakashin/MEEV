@@ -15,8 +15,8 @@ export default function HomeNoIntro() {
               <Image
                 src="/LOGO.png"
                 alt="MEEV Logo"
-                width={100}
-                height={100}
+                width={300}
+                height={300}
                 className="mx-auto"
                 priority
               />
