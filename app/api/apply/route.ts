@@ -56,38 +56,53 @@ export async function POST(req: NextRequest) {
 
     // Detailed promise for form parsing
     const parsedData = await new Promise<{ fields: Record<string, string[]>; files: Record<string, FormidableFile | FormidableFile[]> }>((resolve, reject) => {
-      form.parse(req as any, (err, fields, files) => {
-        if (err) {
-          console.error('Form parsing error:', {
-            errorName: err.name,
-            errorMessage: err.message,
-            errorStack: err.stack,
-          })
-          reject(err)
-        } else {
+      // Wrap the parse method to ensure proper error handling
+      try {
+        form.parse(req as any, (err, fields, files) => {
+          if (err) {
+            console.error('Form parsing error:', {
+              errorName: err.name,
+              errorMessage: err.message,
+              errorStack: err.stack,
+            })
+            reject(err)
+            return
+          }
+
           console.log('Form parsed successfully')
           console.log('Parsed fields:', JSON.stringify(fields, null, 2))
           console.log('Parsed files:', Object.keys(files))
           
           // Safely log file details
+          const processedFiles: Record<string, FormidableFile | FormidableFile[]> = {}
           Object.entries(files).forEach(([key, file]) => {
-            const processFile = (f: FormidableFile) => ({
-              originalFilename: f.originalFilename,
-              mimetype: f.mimetype,
-              size: f.size,
-              filepath: f.filepath,
-            })
+            const processFile = (f: FormidableFile) => {
+              console.log(`File details for ${key}:`, {
+                originalFilename: f.originalFilename,
+                mimetype: f.mimetype,
+                size: f.size,
+                filepath: f.filepath,
+              })
+              return f
+            }
 
             if (Array.isArray(file)) {
-              console.log(`Multiple files for ${key}:`, file.map(processFile))
+              processedFiles[key] = file.map(processFile)
+              console.log(`Multiple files for ${key}:`, file.map(f => f.originalFilename))
             } else {
-              console.log(`File details for ${key}:`, processFile(file))
+              processedFiles[key] = processFile(file)
             }
           })
 
-          resolve({ fields, files })
-        }
-      })
+          resolve({ 
+            fields, 
+            files: processedFiles 
+          })
+        })
+      } catch (error) {
+        console.error('Unexpected error during form parsing:', error)
+        reject(error)
+      }
     })
 
     const extractField = (field: string | string[] | undefined): string => {
