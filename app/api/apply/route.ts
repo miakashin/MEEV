@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   const mailOptions = {
     from: process.env.NOTIFY_EMAIL || '',
-    to: process.env.NOTIFY_EMAIL_TO || '',
+    to: 'Monalisa.Degale@meevassist.com, Lorenzo.mejia@meevassist.com, Emmanuel.deocades@meevassist.com, mejiaalvinjohn@gmail.com',
     subject: 'New Applicant Submission',
     text: `A new applicant has applied:
 
