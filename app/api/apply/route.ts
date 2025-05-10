@@ -49,9 +49,17 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Configure Formidable with safe options
+    // Configure Formidable with comprehensive safe options
     const form = formidable({
       keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024, // 10MB max file size
+      maxFields: 20,
+      allowEmptyFiles: false,
+      uploadDir: process.cwd() + '/tmp/uploads',
+      filename: (name: string, ext: string, part: { originalFilename?: string }) => {
+        // Generate a unique filename
+        return `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`
+      }
     })
 
     // Detailed promise for form parsing
@@ -64,8 +72,18 @@ export async function POST(req: NextRequest) {
               errorName: err.name,
               errorMessage: err.message,
               errorStack: err.stack,
+              errorCode: (err as any).code,
+              errorType: (err as any).type
             })
-            reject(err)
+            
+            // More specific error handling
+            if ((err as any).code === 'ETOOLARGEMEDIA') {
+              reject(new Error('File too large. Maximum file size is 10MB.'))
+            } else if ((err as any).code === 'ENOENT') {
+              reject(new Error('Upload directory not found.'))
+            } else {
+              reject(err)
+            }
             return
           }
 
