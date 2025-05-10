@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
-import Formidable, { File as FormidableFile } from 'formidable'
+import formidable, { File as FormidableFile } from 'formidable'
 import { readFile } from 'fs/promises'
 import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
@@ -50,11 +50,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Configure Formidable with safe options
-    const form = new Formidable()
+    const form = formidable({
+      keepExtensions: true,
+    })
 
     // Detailed promise for form parsing
-    const parsedData = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
-      form.parse(req as any, (err: Error | null, fields, files) => {
+    const parsedData = await new Promise<{ fields: Record<string, string[]>; files: Record<string, FormidableFile | FormidableFile[]> }>((resolve, reject) => {
+      form.parse(req as any, (err, fields, files) => {
         if (err) {
           console.error('Form parsing error:', {
             errorName: err.name,
@@ -69,15 +71,17 @@ export async function POST(req: NextRequest) {
           
           // Safely log file details
           Object.entries(files).forEach(([key, file]) => {
-            if (isFormidableFile(file)) {
-              console.log(`File details for ${key}:`, {
-                originalFilename: file.originalFilename,
-                mimetype: file.mimetype,
-                size: file.size,
-                filepath: file.filepath,
-              })
-            } else if (Array.isArray(file)) {
-              console.log(`Multiple files for ${key}:`, file.map(f => f.originalFilename))
+            const processFile = (f: FormidableFile) => ({
+              originalFilename: f.originalFilename,
+              mimetype: f.mimetype,
+              size: f.size,
+              filepath: f.filepath,
+            })
+
+            if (Array.isArray(file)) {
+              console.log(`Multiple files for ${key}:`, file.map(processFile))
+            } else {
+              console.log(`File details for ${key}:`, processFile(file))
             }
           })
 
