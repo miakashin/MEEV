@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
-import formidable from 'formidable'
-import { readFile } from 'fs/promises'
-import { PrismaClient } from '@prisma/client'
-import { z } from 'zod'
 
-const prisma = new PrismaClient()
+export const runtime = 'edge'
 
 // Custom type for Formidable file
 interface FormidableFile {
@@ -31,86 +26,14 @@ interface ApplicantData {
   interview?: Date
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  // Explicitly log request details for debugging
-  console.log('POST method called')
-  console.log('Request method:', req.method)
-  console.log('Request headers:', Object.fromEntries(req.headers))
+export async function POST(req: Request) {
+  console.log('POST request received')
   console.log('Content-Type:', req.headers.get('content-type'))
 
   try {
-    // Log raw request details
-    console.log('Starting application submission')
-    console.log('Request method:', req.method)
-    console.log('Request headers:', Object.fromEntries(req.headers))
-
-    // Content type validation is handled by the framework
-
-    // Configure Formidable with comprehensive safe options
-    const form = (formidable as any)({
-      keepExtensions: true,
-      maxFileSize: 10 * 1024 * 1024, // 10MB max file size
-      maxFields: 20,
-      allowEmptyFiles: false,
-      uploadDir: process.cwd() + '/tmp/uploads',
-      filename: (name: string, ext: string, part: { originalFilename?: string }) => {
-        // Generate a unique filename
-        return `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`
-      }
-    })
-
-    // Detailed promise for form parsing
-    const parsedData = await new Promise<{ fields: Record<string, string[]>; files: Record<string, FormidableFile | FormidableFile[]> }>((resolve, reject) => {
-      // Validate request body exists
-      if (!req.body) {
-        reject(new Error('Request body is empty'))
-        return
-      }
-      // Set a timeout to prevent hanging
-      const parseTimeout = setTimeout(() => {
-        reject(new Error('Form parsing timeout'))
-      }, 10000) // 10 seconds timeout
-      // Wrap the parse method to ensure proper error handling
-      try {
-        form.parse(req, (err: Error | null, fields: Record<string, string[]>, files: Record<string, FormidableFile | FormidableFile[]>) => {
-          // Clear the timeout
-          clearTimeout(parseTimeout)
-          if (err) {
-            const errorDetails: Record<string, any> = {
-              name: err.name,
-              message: err.message,
-              stack: err.stack
-            }
-
-            // Attempt to safely extract additional error properties
-            if ('code' in err) errorDetails.code = (err as { code: string }).code
-            if ('type' in err) errorDetails.type = (err as { type: string }).type
-
-            console.error('Form parsing error:', errorDetails)
-            
-            // More specific error handling
-            if (errorDetails.code === 'ETOOLARGEMEDIA') {
-              reject(new Error('File too large. Maximum file size is 10MB.'))
-            } else if (errorDetails.code === 'ENOENT') {
-              reject(new Error('Upload directory not found.'))
-            } else {
-              reject(err)
-            }
-            return
-          }
-
-          console.log('Form parsed successfully')
-          console.log('Parsed fields:', JSON.stringify(fields, null, 2))
-          console.log('Parsed files:', Object.keys(files))
-          
-          // Safely log file details
-          const processedFiles: Record<string, FormidableFile | FormidableFile[]> = {}
-          Object.entries(files).forEach(([key, file]) => {
-            const processFile = (f: FormidableFile): FormidableFile => {
-              // Validate file object structure
-              if (!isFormidableFile(f)) {
-                console.warn(`Invalid file object for ${key}:`, f)
-                throw new Error(`Invalid file object for ${key}`)
+    const formData = await req.formData()
+    console.log('Received form data:', Object.fromEntries(formData))
+    console.log('Form data:', formData)
               }
 
               console.log(`File details for ${key}:`, {
@@ -146,31 +69,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     })
 
-    const extractField = (field: string | string[] | undefined): string => {
-      return Array.isArray(field) ? field[0] : field || ''
-    }
+    // Log form data for debugging
+    const applicantData: Record<string, string> = {}
+    for (const [key, value] of formData.entries()) {
+      applicantData[key] = value.toString()
+      console.log(`Form field ${key}:`, value)
 
-    const applicantData: ApplicantData = {
-      firstName: extractField(parsedData.fields.firstName),
-      lastName: extractField(parsedData.fields.lastName),
-      email: extractField(parsedData.fields.email),
-      educationalAttainment: extractField(parsedData.fields.educationalAttainment),
-      schoolName: extractField(parsedData.fields.schoolName),
-      phoneNumber: extractField(parsedData.fields.phoneNumber),
-      address: extractField(parsedData.fields.address),
-      interview: parsedData.fields.interview ? new Date(extractField(parsedData.fields.interview)) : undefined
-    }
-
-    // Validate required fields
-    const requiredFields: (keyof ApplicantData)[] = ['firstName', 'lastName', 'email', 'educationalAttainment', 'schoolName']
-    const missingFields = requiredFields.filter(field => !applicantData[field])
-
-    if (missingFields.length > 0) {
+    // Basic validation
+    if (Object.keys(applicantData).length === 0) {
       return NextResponse.json({ 
         success: false, 
-        message: `Missing required fields: ${missingFields.join(', ')}` 
+        message: 'No form data received' 
       }, { status: 400 })
-    }
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -181,22 +91,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }, { status: 400 })
     }
 
-    // Save to database
-    await prisma.applicant.create({
-      data: applicantData,
-    })
+    // Removed database save for debugging
 
-    // Validate email configuration
-    const notifyEmail = process.env.NOTIFY_EMAIL
-    const notifyEmailPass = process.env.NOTIFY_EMAIL_PASS
-
-    if (!notifyEmail || !notifyEmailPass) {
-      console.error('Missing email configuration', {
-        emailProvided: !!notifyEmail,
-        passwordProvided: !!notifyEmailPass
-      })
-      throw new Error('Email configuration is incomplete')
-    }
+    // Removed email configuration check
 
     // Prepare email with attachment
     const transporter = nodemailer.createTransport({
@@ -259,10 +156,12 @@ Interview: ${applicantData.interview ? applicantData.interview.toLocaleString() 
       data: applicantData,
     })
 
-    return NextResponse.json({
+    return new Response(JSON.stringify({
       success: true,
-      message: 'Application submitted successfully',
-      applicantId: savedApplicant.id
+      message: 'Application received successfully'
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     })
   } catch (error: unknown) {
     console.error('Unexpected error in application submission:', error)
