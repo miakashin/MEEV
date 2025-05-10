@@ -35,8 +35,7 @@ export async function POST(req: Request) {
       subject: 'New Applicant Submission',
       text: Object.entries(formEntries)
         .map(([key, value]) => `${key}: ${value}`)
-        .join('
-')
+        .join('\n')
     }
 
     try {
