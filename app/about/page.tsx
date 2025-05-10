@@ -40,7 +40,7 @@ Her passion for people development and operational excellence has made her a tru
         {/* Hero Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="text-4xl font-bold mb-4">
-            Mission:
+            Mission
           </h1>
           <p className="text-xl text-gray-600">
             To empower businesses and individuals by providing reliable, efficient, and
@@ -51,7 +51,7 @@ Her passion for people development and operational excellence has made her a tru
         {/* Vision Section */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h1 className="text-4xl font-bold mb-4">
-            Vision:
+            Vision
           </h1>
           <p className="text-xl text-gray-600">
             To be a global leader in virtual support solutions, recognized for excellence,
