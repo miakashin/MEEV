@@ -1,4 +1,5 @@
 'use client'
+
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -30,8 +31,8 @@ export default function Home() {
                 <Image
                   src="/LOGO.png"
                   alt="MEEV Logo"
-                  width={300}
-                  height={300}
+                  width={400}
+                  height={400}
                   className="mx-auto"
                   priority
                 />
@@ -40,8 +41,7 @@ export default function Home() {
                 <h1 className="text-7xl hero-title mb-4 animate-scale-in animate-glow">
                   MEEV
                 </h1>
-                                  
-                </div>
+                {/* Roles & Opportunities button removed from here */}
               </div>
               <div className="space-y-6">
                 <h2 className="text-3xl hero-subtitle mb-4">
@@ -106,4 +106,4 @@ export default function Home() {
       />
     </>
   )
-} 
+}
