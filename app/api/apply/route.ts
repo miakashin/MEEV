@@ -5,7 +5,7 @@ import Formidable from 'formidable'
 import { readFile } from 'fs/promises'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 10
 
 const prisma = new PrismaClient()
 
