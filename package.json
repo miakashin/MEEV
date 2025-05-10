@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/formidable": "^3.4.5",
     "@types/nodemailer": "^6.4.17",
     "autoprefixer": "^10.0.0",
     "postcss": "^8.0.0",

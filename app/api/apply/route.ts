@@ -1,96 +1,140 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import nodemailer from 'nodemailer'
 import Formidable from 'formidable'
 import { readFile } from 'fs/promises'
-
-export const dynamic = 'force-dynamic'
-export const maxDuration = 10
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+interface ApplicantData {
+  firstName: string
+  lastName: string
+  email: string
+  educationalAttainment: string
+  schoolName: string
+  phoneNumber?: string
+  address?: string
+  interview?: Date
+}
+
 export async function POST(req: NextRequest) {
-  const form = new Formidable({ multiples: false })
-  const data = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
-    form.parse(req as any, (err: Error | null, fields, files) => {
-      if (err) reject(err)
-      else resolve({ fields, files })
-    })
-  })
-
-  const {
-    firstName: firstNameArr, 
-    lastName: lastNameArr, 
-    email: emailArr, 
-    educationalAttainment: educationalAttainmentArr,
-    schoolName: schoolNameArr, 
-    phoneNumber: phoneNumberArr, 
-    address: addressArr, 
-    interview: interviewArr
-  } = data.fields
-
-  const firstName = Array.isArray(firstNameArr) ? firstNameArr[0] : firstNameArr
-  const lastName = Array.isArray(lastNameArr) ? lastNameArr[0] : lastNameArr
-  const email = Array.isArray(emailArr) ? emailArr[0] : emailArr
-  const educationalAttainment = Array.isArray(educationalAttainmentArr) ? educationalAttainmentArr[0] : educationalAttainmentArr
-  const schoolName = Array.isArray(schoolNameArr) ? schoolNameArr[0] : schoolNameArr
-  const phoneNumber = Array.isArray(phoneNumberArr) ? phoneNumberArr[0] : phoneNumberArr
-  const address = Array.isArray(addressArr) ? addressArr[0] : addressArr
-  const interview = Array.isArray(interviewArr) ? interviewArr[0] : interviewArr
-
-  // Save to database
-  await prisma.applicant.create({
-    data: {
-      firstName: firstName || '',
-      lastName: lastName || '',
-      educationalAttainment: educationalAttainment || '',
-      schoolName: schoolName || '',
-      phoneNumber: phoneNumber || '',
-      address: address || '',
-      interview: interview ? new Date(interview) : undefined,
-    },
-  })
-
-  // Prepare email with attachment
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.NOTIFY_EMAIL,
-      pass: process.env.NOTIFY_EMAIL_PASS,
-    },
-  })
-
-  const attachments = []
-  if (data.files.resume) {
-    const file = Array.isArray(data.files.resume) ? data.files.resume[0] : data.files.resume
-    const fileContent = await readFile(file.filepath)
-    attachments.push({
-      filename: file.originalFilename || 'resume',
-      content: fileContent,
-    })
-  }
-
-  const mailOptions = {
-    from: process.env.NOTIFY_EMAIL || '',
-    to: 'Monalisa.Degale@meevassist.com, Lorenzo.mejia@meevassist.com, Emmanuel.deocades@meevassist.com, mejiaalvinjohn@gmail.com',
-    subject: 'New Applicant Submission',
-    text: `A new applicant has applied:
-
-Name: ${firstName || 'N/A'} ${lastName || 'N/A'}
-Email: ${email || 'N/A'}
-Educational Attainment: ${educationalAttainment || 'N/A'}
-School Name: ${schoolName || 'N/A'}
-Phone Number: ${phoneNumber || 'N/A'}
-Address: ${address || 'N/A'}
-Interview: ${interview ? new Date(interview).toLocaleString() : 'N/A'}`,
-    attachments,
-  }
-
   try {
-    await transporter.sendMail(mailOptions)
-  } catch (error) {
-    console.error('Failed to send notification email:', error)
-  }
+    const form = new Formidable({ multiples: false })
+    const parsedData = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
+      form.parse(req as any, (err: Error | null, fields, files) => {
+        if (err) reject(err)
+        else resolve({ fields, files })
+      })
+    })
 
-  return NextResponse.json({ success: true })
+    const extractField = (field: string | string[] | undefined): string => {
+      return Array.isArray(field) ? field[0] : field || ''
+    }
+
+    const applicantData: ApplicantData = {
+      firstName: extractField(parsedData.fields.firstName),
+      lastName: extractField(parsedData.fields.lastName),
+      email: extractField(parsedData.fields.email),
+      educationalAttainment: extractField(parsedData.fields.educationalAttainment),
+      schoolName: extractField(parsedData.fields.schoolName),
+      phoneNumber: extractField(parsedData.fields.phoneNumber),
+      address: extractField(parsedData.fields.address),
+      interview: parsedData.fields.interview ? new Date(extractField(parsedData.fields.interview)) : undefined
+    }
+
+    // Validate required fields
+    const requiredFields: (keyof ApplicantData)[] = ['firstName', 'lastName', 'email', 'educationalAttainment', 'schoolName']
+    const missingFields = requiredFields.filter(field => !applicantData[field])
+
+    if (missingFields.length > 0) {
+      return NextResponse.json({ 
+        success: false, 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      }, { status: 400 })
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(applicantData.email)) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Invalid email format' 
+      }, { status: 400 })
+    }
+
+    // Save to database
+    await prisma.applicant.create({
+      data: applicantData,
+    })
+
+    // Prepare email with attachment
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.NOTIFY_EMAIL,
+        pass: process.env.NOTIFY_EMAIL_PASS,
+      },
+    })
+
+    const attachments = []
+    const resumeFile = Array.isArray(parsedData.files.resume) ? parsedData.files.resume[0] : parsedData.files.resume
+    if (resumeFile) {
+      const fileContent = await readFile(resumeFile.filepath)
+      attachments.push({
+        filename: resumeFile.originalFilename || 'resume',
+        content: fileContent,
+      })
+    }
+
+    const mailOptions = {
+      from: process.env.NOTIFY_EMAIL || '',
+      to: 'Monalisa.Degale@meevassist.com, Lorenzo.mejia@meevassist.com, Emmanuel.deocades@meevassist.com, mejiaalvinjohn@gmail.com',
+      subject: 'New Applicant Submission',
+      text: `A new applicant has applied:
+
+Name: ${applicantData.firstName} ${applicantData.lastName}
+Email: ${applicantData.email}
+Educational Attainment: ${applicantData.educationalAttainment}
+School Name: ${applicantData.schoolName}
+Phone Number: ${applicantData.phoneNumber || 'N/A'}
+Address: ${applicantData.address || 'N/A'}
+Interview: ${applicantData.interview ? applicantData.interview.toLocaleString() : 'N/A'}`,
+      attachments,
+    }
+
+    // Send email
+    try {
+      const sendResult = await transporter.sendMail(mailOptions)
+      console.log('Email sent successfully:', sendResult)
+    } catch (error: unknown) {
+      const emailError = error instanceof Error ? error : new Error(String(error))
+      
+      console.error('Failed to send notification email:', emailError)
+      // Log the full error details
+      console.error('Email error details:', {
+        message: emailError.message,
+        stack: emailError.stack,
+      })
+
+      // Return an error response if email sending fails
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Failed to send notification email',
+        error: emailError.message
+      }, { status: 500 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Application submitted successfully' 
+    })
+  } catch (error: unknown) {
+    const serverError = error instanceof Error ? error : new Error(String(error))
+    console.error('Server error:', serverError)
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Internal server error',
+      error: serverError.message
+    }, { status: 500 })
+  }
 }
