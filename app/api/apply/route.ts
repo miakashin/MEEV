@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
-import Formidable from 'formidable'
+import Formidable, { File as FormidableFile } from 'formidable'
 import { readFile } from 'fs/promises'
 import { PrismaClient } from '@prisma/client'
+import { z } from 'zod'
 
 const prisma = new PrismaClient()
+
+// Custom type guard for Formidable files
+function isFormidableFile(file: any): file is FormidableFile {
+  return file && typeof file === 'object' && 'filepath' in file
+}
 
 interface ApplicantData {
   firstName: string
@@ -18,21 +24,68 @@ interface ApplicantData {
 }
 
 export async function POST(req: NextRequest) {
+  // Validate request method
+  if (req.method !== 'POST') {
+    console.error('Invalid request method:', req.method)
+    return NextResponse.json({
+      success: false,
+      message: 'Invalid request method'
+    }, { status: 405 })
+  }
+
   try {
+    // Log raw request details
     console.log('Starting application submission')
     console.log('Request method:', req.method)
     console.log('Request headers:', Object.fromEntries(req.headers))
 
-    const form = new Formidable({ multiples: false })
+    // Validate content type
+    const contentType = req.headers.get('content-type')
+    if (!contentType?.includes('multipart/form-data')) {
+      console.error('Invalid content type:', contentType)
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid content type. Expected multipart/form-data'
+      }, { status: 400 })
+    }
+
+    // Configure Formidable with safe options
+    const form = new Formidable({
+      multiples: false,
+      keepExtensions: true,
+      maxFileSize: 10 * 1024 * 1024, // 10MB max file size
+      maxFields: 20,
+    })
+
+    // Detailed promise for form parsing
     const parsedData = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
       form.parse(req as any, (err: Error | null, fields, files) => {
         if (err) {
-          console.error('Form parsing error:', err)
+          console.error('Form parsing error:', {
+            errorName: err.name,
+            errorMessage: err.message,
+            errorStack: err.stack,
+          })
           reject(err)
         } else {
           console.log('Form parsed successfully')
-          console.log('Parsed fields:', fields)
+          console.log('Parsed fields:', JSON.stringify(fields, null, 2))
           console.log('Parsed files:', Object.keys(files))
+          
+          // Safely log file details
+          Object.entries(files).forEach(([key, file]) => {
+            if (isFormidableFile(file)) {
+              console.log(`File details for ${key}:`, {
+                originalFilename: file.originalFilename,
+                mimetype: file.mimetype,
+                size: file.size,
+                filepath: file.filepath,
+              })
+            } else if (Array.isArray(file)) {
+              console.log(`Multiple files for ${key}:`, file.map(f => f.originalFilename))
+            }
+          })
+
           resolve({ fields, files })
         }
       })
