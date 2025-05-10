@@ -4,11 +4,25 @@ export const runtime = 'edge'
 
 export async function POST(req: Request) {
   console.log('POST request received')
-  console.log('Content-Type:', req.headers.get('content-type'))
+  const contentType = req.headers.get('content-type') || ''
+  console.log('Content-Type:', contentType)
 
   try {
-    const formData = await req.formData()
-    const formEntries = Object.fromEntries(formData)
+    let formEntries: Record<string, any>
+
+    // Handle different content types
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData()
+      formEntries = Object.fromEntries(formData)
+    } else if (contentType.includes('application/json')) {
+      formEntries = await req.json()
+    } else {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Unsupported content type' 
+      }, { status: 415 })
+    }
+
     console.log('Received form data:', formEntries)
 
     // Basic validation
@@ -35,7 +49,7 @@ export async function POST(req: Request) {
         console.error('Formspree submission failed:', errorData)
         return NextResponse.json({
           success: false,
-          message: 'Form submission failed',
+          message: 'Form submission to Formspree failed',
           error: errorData
         }, { status: formspreeResponse.status })
       }
@@ -45,8 +59,8 @@ export async function POST(req: Request) {
       console.error('Formspree submission error:', formspreeError)
       return NextResponse.json({
         success: false,
-        message: 'Form submission failed',
-        error: formspreeError
+        message: 'Unexpected error in form submission',
+        error: String(formspreeError)
       }, { status: 500 })
     }
 
@@ -60,7 +74,8 @@ export async function POST(req: Request) {
     
     return NextResponse.json({
       success: false,
-      message: error instanceof Error ? error.message : 'An unexpected error occurred'
+      message: 'Internal server error',
+      error: String(error)
     }, { status: 500 })
   }
 }
