@@ -1,23 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import nodemailer from 'nodemailer'
+import formidable from 'formidable'
+import { readFile } from 'fs/promises'
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
 
 const prisma = new PrismaClient()
 
-export async function POST(req: NextRequest) {
+export async function POST(req: any) {
+  const form = formidable({ multiples: false })
+  const data = await new Promise((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err)
+      else resolve({ fields, files })
+    })
+  }) as any
+
   const {
-    firstName,
-    lastName,
-    email,
-    educationalAttainment,
-    schoolName,
-    phoneNumber,
-    address,
-    interview,
-  } = await req.json()
+    firstName, lastName, email, educationalAttainment,
+    schoolName, phoneNumber, address, interview
+  } = data.fields
 
   // Save to database
-  const applicant = await prisma.applicant.create({
+  await prisma.applicant.create({
     data: {
       firstName,
       lastName,
@@ -29,7 +39,7 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Send notification email
+  // Prepare email with attachment
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -38,21 +48,22 @@ export async function POST(req: NextRequest) {
     },
   })
 
+  const attachments = []
+  if (data.files.resume) {
+    const file = data.files.resume
+    const fileContent = await readFile(file.filepath)
+    attachments.push({
+      filename: file.originalFilename,
+      content: fileContent,
+    })
+  }
+
   const mailOptions = {
     from: process.env.NOTIFY_EMAIL,
     to: process.env.NOTIFY_EMAIL_TO,
     subject: 'New Applicant Submission',
-    text: `
-A new applicant has applied:
-
-Name: ${firstName} ${lastName}
-Email: ${email}
-Educational Attainment: ${educationalAttainment}
-School Name: ${schoolName}
-Phone Number: ${phoneNumber}
-Address: ${address}
-Interview: ${interview ? new Date(interview).toLocaleString() : 'N/A'}
-    `,
+    text: `A new applicant has applied:\n\nName: ${firstName} ${lastName}\nEmail: ${email}\nEducational Attainment: ${educationalAttainment}\nSchool Name: ${schoolName}\nPhone Number: ${phoneNumber}\nAddress: ${address}\nInterview: ${interview ? new Date(interview).toLocaleString() : 'N/A'}`,
+    attachments,
   }
 
   try {
@@ -61,12 +72,5 @@ Interview: ${interview ? new Date(interview).toLocaleString() : 'N/A'}
     console.error('Failed to send notification email:', error)
   }
 
-  return NextResponse.json(applicant)
-}
-
-export async function GET() {
-  const applicants = await prisma.applicant.findMany({
-    orderBy: { createdAt: 'desc' }
-  })
-  return NextResponse.json(applicants)
+  return NextResponse.json({ success: true })
 }

@@ -13,6 +13,7 @@ export default function ApplyPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [address, setAddress] = useState('')
   const [interview, setInterview] = useState<Date | null>(null)
+  const [resume, setResume] = useState<File | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -20,19 +21,20 @@ export default function ApplyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    const formData = new FormData()
+    formData.append('firstName', firstName)
+    formData.append('lastName', lastName)
+    formData.append('email', email)
+    formData.append('educationalAttainment', educationalAttainment)
+    formData.append('schoolName', schoolName)
+    formData.append('phoneNumber', phoneNumber)
+    formData.append('address', address)
+    formData.append('interview', interview ? interview.toString() : '')
+    if (resume) formData.append('resume', resume)
+
     const res = await fetch('/api/apply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firstName,
-        lastName,
-        email,
-        educationalAttainment,
-        schoolName,
-        phoneNumber,
-        address,
-        interview,
-      }),
+      body: formData,
     })
     setLoading(false)
     if (res.ok) {
@@ -45,7 +47,7 @@ export default function ApplyPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-white py-12">
-      <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white/90 rounded-2xl shadow-xl p-8 transition-transform duration-300 hover:scale-105 hover:shadow-2xl border border-blue-100">
+      <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white/90 rounded-2xl shadow-xl p-8 transition-transform duration-300 hover:scale-105 hover:shadow-2xl border border-blue-100" encType="multipart/form-data">
         <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Applicant Form</h2>
         <div className="space-y-4">
           <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First Name" required className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
@@ -63,6 +65,16 @@ export default function ApplyPage() {
               dateFormat="Pp"
               placeholderText="Select interview date/time"
               className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+            />
+          </div>
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">Upload Resume (PDF, DOCX):</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={e => setResume(e.target.files?.[0] || null)}
+              className="w-full p-2 border rounded-lg"
+              required
             />
           </div>
         </div>
