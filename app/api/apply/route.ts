@@ -37,27 +37,56 @@ export async function POST(req: Request) {
     }
 
     // Forward form data to Formspree
+    console.log('Formspree Form ID:', process.env.FORMSPREE_FORM_ID)
+    
     try {
+      // Validate Form ID
+      if (!process.env.FORMSPREE_FORM_ID) {
+        console.error('Formspree Form ID is not set')
+        return NextResponse.json({
+          success: false,
+          message: 'Formspree Form ID is missing',
+          error: 'No Formspree Form ID configured'
+        }, { status: 500 })
+      }
+
+      // Prepare submission data
+      const submissionData = {
+        ...formEntries,
+        _replyto: formEntries.email || 'No email provided'
+      }
+
+      console.log('Submission Data:', JSON.stringify(submissionData))
+
       const formspreeResponse = await fetch(`https://formspree.io/f/${process.env.FORMSPREE_FORM_ID}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(formEntries)
+        body: JSON.stringify(submissionData)
       })
 
+      // Log full response for debugging
+      const responseText = await formspreeResponse.text()
+      console.log('Formspree Response Status:', formspreeResponse.status)
+      console.log('Formspree Response Body:', responseText)
+
       if (!formspreeResponse.ok) {
-        const errorData = await formspreeResponse.text()
-        console.error('Formspree submission failed:', errorData)
+        console.error('Formspree submission failed:', responseText)
         return NextResponse.json({
           success: false,
           message: 'Form submission to Formspree failed',
-          error: errorData
+          error: responseText
         }, { status: formspreeResponse.status })
       }
 
       console.log('Form submitted to Formspree successfully')
+      return NextResponse.json({
+        success: true,
+        message: 'Application received successfully',
+        data: formEntries
+      })
     } catch (formspreeError) {
       console.error('Formspree submission error:', formspreeError)
       return NextResponse.json({
