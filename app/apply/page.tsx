@@ -32,16 +32,30 @@ export default function ApplyPage() {
     formData.append('interview', interview ? interview.toString() : '')
     if (resume) formData.append('resume', resume)
 
-    const res = await fetch('/api/apply', {
-      method: 'POST',
-      body: formData,
-    })
-    setLoading(false)
-    if (res.ok) {
-      setSuccess(true)
-      setTimeout(() => {
-        router.push("/home")
-      }, 1500)
+    try {
+      const res = await fetch('/api/apply', {
+        method: 'POST',
+        body: formData,
+      })
+      setLoading(false)
+      
+      if (res.ok) {
+        const responseData = await res.json()
+        console.log('Submission response:', responseData)
+        setSuccess(true)
+        setTimeout(() => {
+          router.push("/home")
+        }, 1500)
+      } else {
+        // Handle error response
+        const errorData = await res.json()
+        console.error('Submission error:', errorData)
+        alert(`Submission failed: ${errorData.message || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Submission error:', error)
+      setLoading(false)
+      alert('An error occurred while submitting the application. Please try again.')
     }
   }
 
