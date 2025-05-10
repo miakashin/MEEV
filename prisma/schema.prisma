@@ -1,16 +1,21 @@
-  datasource db {
+datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
- model Applicant {
-     id                    String    @id @default(uuid())
-     firstName             String
-     lastName              String
-     educationalAttainment String
-     schoolName            String
-     phoneNumber           String?
-     address               String?
-     interview             DateTime?
-     createdAt             DateTime  @default(now())
-     updatedAt             DateTime  @updatedAt
-   }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Applicant {
+  id                    String    @id @default(uuid())
+  firstName             String
+  lastName              String
+  educationalAttainment String
+  schoolName            String
+  phoneNumber           String?
+  address               String?
+  interview             DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
