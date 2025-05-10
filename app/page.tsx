@@ -30,8 +30,8 @@ export default function Home() {
                 <Image
                   src="/LOGO.png"
                   alt="MEEV Logo"
-                  width={100}
-                  height={100}
+                  width={300}
+                  height={300}
                   className="mx-auto"
                   priority
                 />
@@ -40,14 +40,7 @@ export default function Home() {
                 <h1 className="text-7xl hero-title mb-4 animate-scale-in animate-glow">
                   MEEV
                 </h1>
-                {/* Roles & Opportunities button below the title */}
-                <div className="flex justify-center mt-6">
-                  <Link
-                    href="/pricing/jobs"
-                    className="bg-blue-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-blue-700 transition-all shadow"
-                  >
-                    Roles & Opportunities
-                  </Link>
+                                  
                 </div>
               </div>
               <div className="space-y-6">
