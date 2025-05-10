@@ -3,9 +3,12 @@ import { NextResponse } from 'next/server'
 export const runtime = 'edge'
 
 export async function POST(req: Request) {
-  console.log('POST request received')
+  console.log('🚀 POST request received to /api/apply')
+  console.log('Full Request Headers:', Object.fromEntries(req.headers))
   const contentType = req.headers.get('content-type') || ''
   console.log('Content-Type:', contentType)
+  console.log('Request Method:', req.method)
+  console.log('Request URL:', req.url)
 
   try {
     let formEntries: Record<string, any>
