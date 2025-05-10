@@ -32,8 +32,17 @@ interface ApplicantData {
 }
 
 export async function POST(req: NextRequest) {
-  // No need to manually check method in Next.js 13+ App Router
-  // The route will only be called for POST requests
+  console.log('POST method called')
+  console.log('Request headers:', Object.fromEntries(req.headers))
+  
+  // Explicitly handle multipart/form-data
+  if (!req.headers.get('content-type')?.includes('multipart/form-data')) {
+    console.error('Invalid content type')
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Invalid content type. Expected multipart/form-data' 
+    }, { status: 400 })
+  }
 
   try {
     // Log raw request details
@@ -58,9 +67,15 @@ export async function POST(req: NextRequest) {
 
     // Detailed promise for form parsing
     const parsedData = await new Promise<{ fields: Record<string, string[]>; files: Record<string, FormidableFile | FormidableFile[]> }>((resolve, reject) => {
+      // Set a timeout to prevent hanging
+      const parseTimeout = setTimeout(() => {
+        reject(new Error('Form parsing timeout'))
+      }, 10000) // 10 seconds timeout
       // Wrap the parse method to ensure proper error handling
       try {
         form.parse(req, (err: Error | null, fields: Record<string, string[]>, files: Record<string, FormidableFile | FormidableFile[]>) => {
+          // Clear the timeout
+          clearTimeout(parseTimeout)
           if (err) {
             const errorDetails: Record<string, any> = {
               name: err.name,
@@ -236,36 +251,22 @@ Interview: ${applicantData.interview ? applicantData.interview.toLocaleString() 
       // Return an error response if email sending fails
       return NextResponse.json({ 
         success: false, 
-        message: 'Failed to send notification email',
-        error: emailError.message
+        message: 'Failed to send notification email'
       }, { status: 500 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Application submitted successfully' 
+    return NextResponse.json({
+      success: true,
+      message: 'Application submitted successfully',
+      applicantId: savedApplicant.id
     })
   } catch (error: unknown) {
-    const serverError = error instanceof Error ? error : new Error(String(error))
-    console.error('Server error:', serverError)
-    console.error('Error name:', serverError.name)
-    console.error('Error message:', serverError.message)
-    console.error('Error stack:', serverError.stack)
+    console.error('Unexpected error in application submission:', error)
     
-    // Log additional context if available
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: (error as any).cause,
-      })
-    }
-
-    return NextResponse.json({ 
-      success: false, 
-      message: 'Internal server error',
-      error: serverError.message
+    // Ensure a response is always sent
+    return NextResponse.json({
+      success: false,
+      message: error instanceof Error ? error.message : 'An unexpected error occurred'
     }, { status: 500 })
   }
 }
