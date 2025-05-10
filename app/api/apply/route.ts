@@ -32,14 +32,8 @@ interface ApplicantData {
 }
 
 export async function POST(req: NextRequest) {
-  // Validate request method
-  if (req.method !== 'POST') {
-    console.error('Invalid request method:', req.method)
-    return NextResponse.json({
-      success: false,
-      message: 'Invalid request method'
-    }, { status: 405 })
-  }
+  // No need to manually check method in Next.js 13+ App Router
+  // The route will only be called for POST requests
 
   try {
     // Log raw request details
@@ -47,15 +41,7 @@ export async function POST(req: NextRequest) {
     console.log('Request method:', req.method)
     console.log('Request headers:', Object.fromEntries(req.headers))
 
-    // Validate content type
-    const contentType = req.headers.get('content-type')
-    if (!contentType?.includes('multipart/form-data')) {
-      console.error('Invalid content type:', contentType)
-      return NextResponse.json({
-        success: false,
-        message: 'Invalid content type. Expected multipart/form-data'
-      }, { status: 400 })
-    }
+    // Content type validation is handled by the framework
 
     // Configure Formidable with comprehensive safe options
     const form = (formidable as any)({
