@@ -255,6 +255,11 @@ Interview: ${applicantData.interview ? applicantData.interview.toLocaleString() 
       }, { status: 500 })
     }
 
+    // Save applicant to database before returning response
+    const savedApplicant = await prisma.applicant.create({
+      data: applicantData,
+    })
+
     return NextResponse.json({
       success: true,
       message: 'Application submitted successfully',
