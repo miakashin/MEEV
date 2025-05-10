@@ -31,18 +31,12 @@ interface ApplicantData {
   interview?: Date
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // Explicitly log request details for debugging
   console.log('POST method called')
+  console.log('Request method:', req.method)
   console.log('Request headers:', Object.fromEntries(req.headers))
-  
-  // Explicitly handle multipart/form-data
-  if (!req.headers.get('content-type')?.includes('multipart/form-data')) {
-    console.error('Invalid content type')
-    return NextResponse.json({ 
-      success: false, 
-      message: 'Invalid content type. Expected multipart/form-data' 
-    }, { status: 400 })
-  }
+  console.log('Content-Type:', req.headers.get('content-type'))
 
   try {
     // Log raw request details
@@ -67,6 +61,11 @@ export async function POST(req: NextRequest) {
 
     // Detailed promise for form parsing
     const parsedData = await new Promise<{ fields: Record<string, string[]>; files: Record<string, FormidableFile | FormidableFile[]> }>((resolve, reject) => {
+      // Validate request body exists
+      if (!req.body) {
+        reject(new Error('Request body is empty'))
+        return
+      }
       // Set a timeout to prevent hanging
       const parseTimeout = setTimeout(() => {
         reject(new Error('Form parsing timeout'))
