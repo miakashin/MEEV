@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import nodemailer from 'nodemailer'
 
 export const runtime = 'edge'
 
@@ -20,29 +19,35 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // Send email notification
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.NOTIFY_EMAIL,
-        pass: process.env.NOTIFY_EMAIL_PASS,
-      },
-    })
-
-    const mailOptions = {
-      from: process.env.NOTIFY_EMAIL,
-      to: 'Monalisa.Degale@meevassist.com, Lorenzo.mejia@meevassist.com, Emmanuel.deocades@meevassist.com, mejiaalvinjohn@gmail.com',
-      subject: 'New Applicant Submission',
-      text: Object.entries(formEntries)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join('\n')
-    }
-
+    // Forward form data to Formspree
     try {
-      await transporter.sendMail(mailOptions)
-      console.log('Email sent successfully')
-    } catch (emailError) {
-      console.error('Failed to send email:', emailError)
+      const formspreeResponse = await fetch(`https://formspree.io/f/${process.env.FORMSPREE_FORM_ID}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(formEntries)
+      })
+
+      if (!formspreeResponse.ok) {
+        const errorData = await formspreeResponse.text()
+        console.error('Formspree submission failed:', errorData)
+        return NextResponse.json({
+          success: false,
+          message: 'Form submission failed',
+          error: errorData
+        }, { status: formspreeResponse.status })
+      }
+
+      console.log('Form submitted to Formspree successfully')
+    } catch (formspreeError) {
+      console.error('Formspree submission error:', formspreeError)
+      return NextResponse.json({
+        success: false,
+        message: 'Form submission failed',
+        error: formspreeError
+      }, { status: 500 })
     }
 
     return NextResponse.json({

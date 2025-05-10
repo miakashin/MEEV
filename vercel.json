@@ -1,0 +1,9 @@
+{
+  "name": "va-website",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+}
