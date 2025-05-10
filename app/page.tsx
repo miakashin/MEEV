@@ -6,7 +6,7 @@ import Link from 'next/link'
 import IntroVideo from '../components/IntroVideo'
 import RegisterModal from '../components/RegisterModal'
 import LoginModal from '../components/LoginModal'
-// import Navbar from '../components/Navbar'  // <-- REMOVE or comment this out
+// import Navbar from '../components/Navbar'  // Uncomment if you want the Navbar here
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false)
@@ -20,7 +20,7 @@ export default function Home() {
 
   return (
     <>
-      {/* <Navbar />  <-- REMOVE or comment this out */}
+      {/* <Navbar /> */}
       <main className="min-h-screen pt-28">
         {/* Hero Section */}
         <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 text-white py-32 relative overflow-hidden">
@@ -31,8 +31,8 @@ export default function Home() {
                 <Image
                   src="/LOGO.png"
                   alt="MEEV Logo"
-                  width={400}
-                  height={400}
+                  width={100}
+                  height={100}
                   className="mx-auto"
                   priority
                 />
@@ -41,7 +41,13 @@ export default function Home() {
                 <h1 className="text-7xl hero-title mb-4 animate-scale-in animate-glow">
                   MEEV
                 </h1>
-                {/* Roles & Opportunities button removed from here */}
+                {/* Apply as Applicant Button */}
+                <Link
+                  href="/apply"
+                  className="bg-green-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-green-700 transition-all shadow mt-6 inline-block"
+                >
+                  Apply as Applicant
+                </Link>
               </div>
               <div className="space-y-6">
                 <h2 className="text-3xl hero-subtitle mb-4">

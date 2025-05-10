@@ -259,8 +259,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.6.0
-   * Query Engine version: f676762280b54cd07c770017ed3711ddde35f37a
+   * Prisma Client JS version: 6.7.0
+   * Query Engine version: 3cff47a7f5d65c3ea74883f1d736e41d68ce91ed
    */
   export type PrismaVersion = {
     client: string
@@ -3293,6 +3293,7 @@ export namespace Prisma {
     schoolName: string | null
     phoneNumber: string | null
     address: string | null
+    interview: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3306,6 +3307,7 @@ export namespace Prisma {
     schoolName: string | null
     phoneNumber: string | null
     address: string | null
+    interview: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -3319,6 +3321,7 @@ export namespace Prisma {
     schoolName: number
     phoneNumber: number
     address: number
+    interview: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -3334,6 +3337,7 @@ export namespace Prisma {
     schoolName?: true
     phoneNumber?: true
     address?: true
+    interview?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3347,6 +3351,7 @@ export namespace Prisma {
     schoolName?: true
     phoneNumber?: true
     address?: true
+    interview?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -3360,6 +3365,7 @@ export namespace Prisma {
     schoolName?: true
     phoneNumber?: true
     address?: true
+    interview?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -3446,6 +3452,7 @@ export namespace Prisma {
     schoolName: string
     phoneNumber: string | null
     address: string | null
+    interview: Date | null
     createdAt: Date
     updatedAt: Date
     _count: ApplicantCountAggregateOutputType | null
@@ -3476,6 +3483,7 @@ export namespace Prisma {
     schoolName?: boolean
     phoneNumber?: boolean
     address?: boolean
+    interview?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3490,6 +3498,7 @@ export namespace Prisma {
     schoolName?: boolean
     phoneNumber?: boolean
     address?: boolean
+    interview?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3504,6 +3513,7 @@ export namespace Prisma {
     schoolName?: boolean
     phoneNumber?: boolean
     address?: boolean
+    interview?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
@@ -3518,11 +3528,12 @@ export namespace Prisma {
     schoolName?: boolean
     phoneNumber?: boolean
     address?: boolean
+    interview?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ApplicantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "firstName" | "lastName" | "educationalAttainment" | "schoolName" | "phoneNumber" | "address" | "createdAt" | "updatedAt", ExtArgs["result"]["applicant"]>
+  export type ApplicantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "firstName" | "lastName" | "educationalAttainment" | "schoolName" | "phoneNumber" | "address" | "interview" | "createdAt" | "updatedAt", ExtArgs["result"]["applicant"]>
   export type ApplicantInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -3547,6 +3558,7 @@ export namespace Prisma {
       schoolName: string
       phoneNumber: string | null
       address: string | null
+      interview: Date | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["applicant"]>
@@ -3981,6 +3993,7 @@ export namespace Prisma {
     readonly schoolName: FieldRef<"Applicant", 'String'>
     readonly phoneNumber: FieldRef<"Applicant", 'String'>
     readonly address: FieldRef<"Applicant", 'String'>
+    readonly interview: FieldRef<"Applicant", 'DateTime'>
     readonly createdAt: FieldRef<"Applicant", 'DateTime'>
     readonly updatedAt: FieldRef<"Applicant", 'DateTime'>
   }
@@ -4442,6 +4455,7 @@ export namespace Prisma {
     schoolName: 'schoolName',
     phoneNumber: 'phoneNumber',
     address: 'address',
+    interview: 'interview',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -4651,6 +4665,7 @@ export namespace Prisma {
     schoolName?: StringFilter<"Applicant"> | string
     phoneNumber?: StringNullableFilter<"Applicant"> | string | null
     address?: StringNullableFilter<"Applicant"> | string | null
+    interview?: DateTimeNullableFilter<"Applicant"> | Date | string | null
     createdAt?: DateTimeFilter<"Applicant"> | Date | string
     updatedAt?: DateTimeFilter<"Applicant"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -4665,6 +4680,7 @@ export namespace Prisma {
     schoolName?: SortOrder
     phoneNumber?: SortOrderInput | SortOrder
     address?: SortOrderInput | SortOrder
+    interview?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     user?: UserOrderByWithRelationInput
@@ -4682,6 +4698,7 @@ export namespace Prisma {
     schoolName?: StringFilter<"Applicant"> | string
     phoneNumber?: StringNullableFilter<"Applicant"> | string | null
     address?: StringNullableFilter<"Applicant"> | string | null
+    interview?: DateTimeNullableFilter<"Applicant"> | Date | string | null
     createdAt?: DateTimeFilter<"Applicant"> | Date | string
     updatedAt?: DateTimeFilter<"Applicant"> | Date | string
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
@@ -4696,6 +4713,7 @@ export namespace Prisma {
     schoolName?: SortOrder
     phoneNumber?: SortOrderInput | SortOrder
     address?: SortOrderInput | SortOrder
+    interview?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: ApplicantCountOrderByAggregateInput
@@ -4715,6 +4733,7 @@ export namespace Prisma {
     schoolName?: StringWithAggregatesFilter<"Applicant"> | string
     phoneNumber?: StringNullableWithAggregatesFilter<"Applicant"> | string | null
     address?: StringNullableWithAggregatesFilter<"Applicant"> | string | null
+    interview?: DateTimeNullableWithAggregatesFilter<"Applicant"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Applicant"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Applicant"> | Date | string
   }
@@ -4881,6 +4900,7 @@ export namespace Prisma {
     schoolName: string
     phoneNumber?: string | null
     address?: string | null
+    interview?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutApplicantInput
@@ -4895,6 +4915,7 @@ export namespace Prisma {
     schoolName: string
     phoneNumber?: string | null
     address?: string | null
+    interview?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4907,6 +4928,7 @@ export namespace Prisma {
     schoolName?: StringFieldUpdateOperationsInput | string
     phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
+    interview?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutApplicantNestedInput
@@ -4921,6 +4943,7 @@ export namespace Prisma {
     schoolName?: StringFieldUpdateOperationsInput | string
     phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
+    interview?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4934,6 +4957,7 @@ export namespace Prisma {
     schoolName: string
     phoneNumber?: string | null
     address?: string | null
+    interview?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4946,6 +4970,7 @@ export namespace Prisma {
     schoolName?: StringFieldUpdateOperationsInput | string
     phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
+    interview?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4959,6 +4984,7 @@ export namespace Prisma {
     schoolName?: StringFieldUpdateOperationsInput | string
     phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
+    interview?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5150,6 +5176,17 @@ export namespace Prisma {
     _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
   export type ApplicantCountOrderByAggregateInput = {
     id?: SortOrder
     userId?: SortOrder
@@ -5159,6 +5196,7 @@ export namespace Prisma {
     schoolName?: SortOrder
     phoneNumber?: SortOrder
     address?: SortOrder
+    interview?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -5172,6 +5210,7 @@ export namespace Prisma {
     schoolName?: SortOrder
     phoneNumber?: SortOrder
     address?: SortOrder
+    interview?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -5185,8 +5224,23 @@ export namespace Prisma {
     schoolName?: SortOrder
     phoneNumber?: SortOrder
     address?: SortOrder
+    interview?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
   export type ClientCreateNestedOneWithoutUserInput = {
@@ -5287,6 +5341,10 @@ export namespace Prisma {
     create?: XOR<UserCreateWithoutApplicantInput, UserUncheckedCreateWithoutApplicantInput>
     connectOrCreate?: UserCreateOrConnectWithoutApplicantInput
     connect?: UserWhereUniqueInput
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
   }
 
   export type UserUpdateOneRequiredWithoutApplicantNestedInput = {
@@ -5423,6 +5481,31 @@ export namespace Prisma {
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
 
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | null
+    notIn?: Date[] | string[] | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
   export type ClientCreateWithoutUserInput = {
     id?: string
     firstName: string
@@ -5456,6 +5539,7 @@ export namespace Prisma {
     schoolName: string
     phoneNumber?: string | null
     address?: string | null
+    interview?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5468,6 +5552,7 @@ export namespace Prisma {
     schoolName: string
     phoneNumber?: string | null
     address?: string | null
+    interview?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -5527,6 +5612,7 @@ export namespace Prisma {
     schoolName?: StringFieldUpdateOperationsInput | string
     phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
+    interview?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -5539,6 +5625,7 @@ export namespace Prisma {
     schoolName?: StringFieldUpdateOperationsInput | string
     phoneNumber?: NullableStringFieldUpdateOperationsInput | string | null
     address?: NullableStringFieldUpdateOperationsInput | string | null
+    interview?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
