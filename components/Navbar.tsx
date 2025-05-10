@@ -37,6 +37,12 @@ export default function Navbar() {
               About
             </Link>
             <Link 
+              href="/pricing/jobs" 
+              className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700"
+            >
+              Roles & Opportunities
+            </Link>
+            <Link 
               href="/get-started" 
               className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700"
             >
@@ -97,6 +103,12 @@ export default function Navbar() {
                 About
               </Link>
               <Link 
+                href="/pricing/jobs" 
+                className="block px-3 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700"
+              >
+                Roles & Opportunities
+              </Link>
+              <Link 
                 href="/get-started" 
                 className="block px-3 py-2 bg-blue-600 text-white rounded-full text-center hover:bg-blue-700"
               >
@@ -108,4 +120,4 @@ export default function Navbar() {
       </div>
     </nav>
   )
-} 
+}
