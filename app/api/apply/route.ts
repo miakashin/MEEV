@@ -19,11 +19,22 @@ interface ApplicantData {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('Starting application submission')
+    console.log('Request method:', req.method)
+    console.log('Request headers:', Object.fromEntries(req.headers))
+
     const form = new Formidable({ multiples: false })
     const parsedData = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
       form.parse(req as any, (err: Error | null, fields, files) => {
-        if (err) reject(err)
-        else resolve({ fields, files })
+        if (err) {
+          console.error('Form parsing error:', err)
+          reject(err)
+        } else {
+          console.log('Form parsed successfully')
+          console.log('Parsed fields:', fields)
+          console.log('Parsed files:', Object.keys(files))
+          resolve({ fields, files })
+        }
       })
     })
 
@@ -67,12 +78,24 @@ export async function POST(req: NextRequest) {
       data: applicantData,
     })
 
+    // Validate email configuration
+    const notifyEmail = process.env.NOTIFY_EMAIL
+    const notifyEmailPass = process.env.NOTIFY_EMAIL_PASS
+
+    if (!notifyEmail || !notifyEmailPass) {
+      console.error('Missing email configuration', {
+        emailProvided: !!notifyEmail,
+        passwordProvided: !!notifyEmailPass
+      })
+      throw new Error('Email configuration is incomplete')
+    }
+
     // Prepare email with attachment
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.NOTIFY_EMAIL,
-        pass: process.env.NOTIFY_EMAIL_PASS,
+        user: notifyEmail,
+        pass: notifyEmailPass,
       },
     })
 
@@ -131,6 +154,20 @@ Interview: ${applicantData.interview ? applicantData.interview.toLocaleString() 
   } catch (error: unknown) {
     const serverError = error instanceof Error ? error : new Error(String(error))
     console.error('Server error:', serverError)
+    console.error('Error name:', serverError.name)
+    console.error('Error message:', serverError.message)
+    console.error('Error stack:', serverError.stack)
+    
+    // Log additional context if available
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        cause: (error as any).cause,
+      })
+    }
+
     return NextResponse.json({ 
       success: false, 
       message: 'Internal server error',
