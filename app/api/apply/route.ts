@@ -1,30 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 export const runtime = 'edge'
-
-// Custom type for Formidable file
-interface FormidableFile {
-  filepath: string
-  originalFilename?: string
-  mimetype?: string
-  size: number
-}
-
-// Custom type guard for Formidable files
-function isFormidableFile(file: any): file is FormidableFile {
-  return file && typeof file === 'object' && 'filepath' in file
-}
-
-interface ApplicantData {
-  firstName: string
-  lastName: string
-  email: string
-  educationalAttainment: string
-  schoolName: string
-  phoneNumber?: string
-  address?: string
-  interview?: Date
-}
 
 export async function POST(req: Request) {
   console.log('POST request received')
@@ -32,16 +8,9 @@ export async function POST(req: Request) {
 
   try {
     const formData = await req.formData()
-    console.log('Received form data:', Object.fromEntries(formData))
-    console.log('Form data:', formData)
-              }
+    const formEntries = Object.fromEntries(formData)
+    console.log('Received form data:', formEntries)
 
-              console.log(`File details for ${key}:`, {
-                originalFilename: f.originalFilename,
-                mimetype: f.mimetype,
-                size: f.size,
-                filepath: f.filepath,
-              })
               return f
             }
 
@@ -156,12 +125,10 @@ Interview: ${applicantData.interview ? applicantData.interview.toLocaleString() 
       data: applicantData,
     })
 
-    return new Response(JSON.stringify({
+    return NextResponse.json({
       success: true,
-      message: 'Application received successfully'
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      message: 'Application received successfully',
+      data: formEntries
     })
   } catch (error: unknown) {
     console.error('Unexpected error in application submission:', error)
