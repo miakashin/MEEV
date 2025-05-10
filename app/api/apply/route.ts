@@ -4,11 +4,8 @@ import nodemailer from 'nodemailer'
 import formidable from 'formidable'
 import { readFile } from 'fs/promises'
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+export const dynamic = 'force-dynamic'
+export const maxDuration = 300
 
 const prisma = new PrismaClient()
 
