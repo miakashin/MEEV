@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import nodemailer from 'nodemailer'
-import formidable, { Fields, Files } from 'formidable'
+import Formidable from 'formidable'
 import { readFile } from 'fs/promises'
 
 export const dynamic = 'force-dynamic'
@@ -10,9 +10,9 @@ export const maxDuration = 300
 const prisma = new PrismaClient()
 
 export async function POST(req: NextRequest) {
-  const form = formidable({ multiples: false })
-  const data = await new Promise<{ fields: Fields; files: Files }>((resolve, reject) => {
-    form.parse(req, (err, fields, files) => {
+  const form = new Formidable({ multiples: false })
+  const data = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
+    form.parse(req as any, (err: Error | null, fields, files) => {
       if (err) reject(err)
       else resolve({ fields, files })
     })
