@@ -50,12 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Configure Formidable with safe options
-    const form = new Formidable({
-      multiples: false,
-      keepExtensions: true,
-      maxFileSize: 10 * 1024 * 1024, // 10MB max file size
-      maxFields: 20,
-    })
+    const form = new Formidable()
 
     // Detailed promise for form parsing
     const parsedData = await new Promise<{ fields: { [key: string]: string | string[] }; files: { [key: string]: any } }>((resolve, reject) => {
