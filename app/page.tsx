@@ -41,13 +41,6 @@ export default function Home() {
                 <h1 className="text-7xl hero-title mb-4 animate-scale-in animate-glow">
                   MEEV
                 </h1>
-                {/* Apply as Applicant Button */}
-                <Link
-                  href="/apply"
-                  className="bg-green-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-green-700 transition-all shadow mt-6 inline-block"
-                >
-                  Apply as Applicant
-                </Link>
               </div>
               <div className="space-y-6">
                 <h2 className="text-3xl hero-subtitle mb-4">
