@@ -12,13 +12,16 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2 py-2">
-            <Image
-              src="/LOGO.png"
-              alt="MEEV Logo"
-              width={100}
-              height={100}
-              className="object-contain"
-            />
+            <div className="relative w-10 h-10 md:w-12 md:h-12">
+              <Image
+                src="/LOGO.png"
+                alt="MEEV Logo"
+                fill
+                sizes="(max-width: 768px) 40px, 48px"
+                className="object-contain"
+                priority
+              />
+            </div>
             <div className="flex flex-col">
               <span className="font-bold text-2xl text-blue-600">MEEV</span>
               <span className="text-sm text-gray-600">VIRTUALLY YOURS</span>

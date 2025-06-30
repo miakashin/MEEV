@@ -49,17 +49,18 @@ export async function POST(request: Request) {
       resume?: File | null;
     }
 
+    // Get all form data with proper type casting
     const formDataObj: FormDataObj = {
-      name: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
-      educationalAttainment: formData.get('educationalAttainment') as string,
-      schoolName: formData.get('schoolName') as string,
-      phone: formData.get('phone') as string,
-      address: formData.get('address') as string,
-      interview: formData.get('interview') as string,
+      name: String(formData.get('firstName') || ''),
+      lastName: String(formData.get('lastName') || ''),
+      email: String(formData.get('email') || ''),
+      educationalAttainment: String(formData.get('educationalAttainment') || ''),
+      schoolName: String(formData.get('schoolName') || ''),
+      phone: String(formData.get('phoneNumber') || ''), // Fixed field name to match form
+      address: String(formData.get('address') || ''),
+      interview: String(formData.get('interview') || ''),
       formType: formType,
-      resume: formData.get('resume') as File | null || undefined
+      resume: formData.get('resume') as unknown as File || undefined
     };
 
     // Add plan information if it's a pricing form
@@ -92,41 +93,68 @@ export async function POST(request: Request) {
 
     // Email content
     let emailContent = '';
+    let subject = '';
     
     if (formType === 'applicant') {
+      subject = 'New Job Application';
       emailContent = `
-        First Name: ${formDataObj.name}\n
-        Last Name: ${formDataObj.lastName}\n
-        Email: ${formDataObj.email}\n
-        Educational Attainment: ${formDataObj.educationalAttainment}\n
-        School Name: ${formDataObj.schoolName}\n
-        Phone: ${formDataObj.phone}\n
-        Address: ${formDataObj.address}\n
-        Interview Date: ${formDataObj.interview}\n
+        First Name: ${formDataObj.name}
+        Last Name: ${formDataObj.lastName}
+        Email: ${formDataObj.email}
+        Educational Attainment: ${formDataObj.educationalAttainment}
+        School Name: ${formDataObj.schoolName}
+        Phone: ${formDataObj.phone}
+        Address: ${formDataObj.address}
+        Interview Date: ${formDataObj.interview ? new Date(formDataObj.interview).toLocaleString() : 'Not specified'}
         Resume Attached: ${formDataObj.resume ? 'Yes' : 'No'}
       `;
-    } else {
+    } else if (formType === 'pricing') {
+      subject = 'Pricing Inquiry';
       emailContent = `
-        Name: ${formDataObj.name}\n
-        Email: ${formDataObj.email}\n
-        Company: ${formDataObj.company}\n
-        Phone: ${formDataObj.phone}\n
-        ${formType === 'pricing' ? `Plan: ${formDataObj.plan}\n` : ''}
-        Message:\n${formDataObj.message}
+        Name: ${formDataObj.name} ${formDataObj.lastName}
+        Email: ${formDataObj.email}
+        Phone: ${formDataObj.phone}
+        Plan: ${formDataObj.plan || 'Not specified'}
+      `;
+    } else { // get-started
+      subject = 'New Client Application';
+      emailContent = `
+        Name: ${formDataObj.name} ${formDataObj.lastName}
+        Email: ${formDataObj.email}
+        Phone: ${formDataObj.phone}
+        Message: ${formDataObj.message || 'No message provided'}
       `;
     }
 
     // Send email
-    const mailOptions = {
-      from: gmailEmail,
-      to: recipientEmails.join(','),
-      subject: formType === 'get-started' ? 'New Client Application' : 'Pricing Inquiry',
-      text: emailContent
-    };
+    try {
+      const mailOptions: any = {
+        from: gmailEmail,
+        to: recipientEmails.join(','),
+        subject: subject,
+        text: emailContent.trim(),
+      };
 
-    await transporter.sendMail(mailOptions);
+      // Handle file attachment if present
+      if (formDataObj.resume) {
+        const resumeFile = formDataObj.resume as unknown as File;
+        const buffer = Buffer.from(await resumeFile.arrayBuffer());
+        mailOptions.attachments = [{
+          filename: resumeFile.name || 'resume.pdf',
+          content: buffer
+        }];
+      }
 
-    return NextResponse.json({ success: true });
+      await transporter.sendMail(mailOptions);
+      console.log('Email sent successfully');
+      return NextResponse.json({ 
+        success: true,
+        message: 'Form submitted successfully' 
+      });
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      throw new Error('Failed to send email');
+    }
   } catch (error: unknown) {
     console.error('Detailed error:', error);
     if (error instanceof Error) {

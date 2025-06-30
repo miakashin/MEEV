@@ -76,7 +76,7 @@ export default function ApplyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // Redundant FormData initialization removed
+    
     try {
       const formData = new FormData()
       formData.append('firstName', firstName)
@@ -86,33 +86,64 @@ export default function ApplyPage() {
       formData.append('schoolName', schoolName)
       formData.append('phoneNumber', phoneNumber)
       formData.append('address', address)
-      formData.append('interview', interview ? interview.toISOString() : '') // Submit as UTC ISO string
+      formData.append('interview', interview ? interview.toISOString() : '')
       formData.append('formType', 'applicant')
-      if (resume) formData.append('resume', resume)
+      
+      // Only append resume if it exists
+      if (resume) {
+        formData.append('resume', resume)
+      }
 
       const res = await fetch('/api/contact', {
         method: 'POST',
         body: formData,
+        // Don't set Content-Type header, let the browser set it with the correct boundary
+        headers: {
+          'Accept': 'application/json',
+        },
       })
-      setLoading(false)
       
-      if (res.ok) {
+      try {
         const responseData = await res.json()
-        console.log('Submission response:', responseData)
-        setSuccess(true)
-        setTimeout(() => {
-          router.push("/home")
-        }, 1500)
-      } else {
-        // Handle error response
-        const errorData = await res.json()
-        console.error('Submission error:', errorData)
-        alert(`Submission failed: ${errorData.message || 'Unknown error'}`)
+        
+        if (res.ok) {
+          console.log('Submission successful:', responseData)
+          setSuccess(true)
+          
+          // Clear form
+          setFirstName('')
+          setLastName('')
+          setEmail('')
+          setEducationalAttainment('')
+          setSchoolName('')
+          setPhoneNumber('')
+          setAddress('')
+          setInterview(null)
+          setResume(null)
+          
+          // Reset file input
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+          if (fileInput) fileInput.value = ''
+          
+          // Redirect after delay
+          setTimeout(() => {
+            router.push("/home")
+          }, 1500)
+        } else {
+          // Handle error response
+          console.error('Submission failed:', responseData)
+          alert(`Submission failed: ${responseData.error || 'Unknown error'}\n${responseData.details || ''}`)
+        }
+      } catch (jsonError) {
+        console.error('Error parsing JSON response:', jsonError)
+        throw new Error('Invalid response from server')
       }
     } catch (error) {
       console.error('Submission error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred'
+      alert(`An error occurred while submitting the application: ${errorMessage}`)
+    } finally {
       setLoading(false)
-      alert('An error occurred while submitting the application. Please try again.')
     }
   }
 
@@ -150,10 +181,28 @@ export default function ApplyPage() {
             <input
               type="file"
               accept=".pdf,.doc,.docx"
-              onChange={e => setResume(e.target.files?.[0] || null)}
-              className="w-full p-2 border rounded-lg"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  // Validate file size (5MB max)
+                  if (file.size > 5 * 1024 * 1024) {
+                    alert('File size should be less than 5MB');
+                    e.target.value = ''; // Clear the input
+                    return;
+                  }
+                  setResume(file);
+                } else {
+                  setResume(null);
+                }
+              }}
+              className="w-full p-2 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               required
             />
+            {resume && (
+              <p className="mt-1 text-sm text-gray-600">
+                Selected: {resume.name} ({(resume.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
           </div>
         </div>
         <button type="submit" disabled={loading} className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow transition disabled:opacity-60 disabled:cursor-not-allowed">
