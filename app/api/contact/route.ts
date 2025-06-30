@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
+// Set the runtime to Node.js
+export const runtime = 'nodejs';
+
 // Function to get plan price based on plan name
 function getPlanPrice(plan: string): string {
   const planPrices: { [key: string]: string } = {
@@ -147,9 +150,14 @@ export async function POST(request: Request) {
 
       await transporter.sendMail(mailOptions);
       console.log('Email sent successfully');
-      return NextResponse.json({ 
+      return new NextResponse(JSON.stringify({ 
         success: true,
         message: 'Form submitted successfully' 
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
     } catch (emailError) {
       console.error('Email sending error:', emailError);
@@ -161,16 +169,26 @@ export async function POST(request: Request) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
       
-      return NextResponse.json({ 
+      return new NextResponse(JSON.stringify({ 
         success: false, 
         error: error.message,
         details: error.stack 
-      }, { status: 500 });
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
     }
     
-    return NextResponse.json({ 
+    return new NextResponse(JSON.stringify({ 
       success: false, 
       error: 'An unexpected error occurred' 
-    }, { status: 500 });
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }

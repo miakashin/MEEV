@@ -94,6 +94,19 @@ export default function ApplyPage() {
         formData.append('resume', resume)
       }
 
+      // Log the form data being sent
+      console.log('Submitting form data:', {
+        firstName,
+        lastName,
+        email,
+        educationalAttainment,
+        schoolName,
+        phoneNumber,
+        address,
+        interview: interview?.toISOString(),
+        resume: resume ? `${resume.name} (${(resume.size / 1024).toFixed(2)} KB)` : 'None'
+      });
+
       const res = await fetch('/api/contact', {
         method: 'POST',
         body: formData,
@@ -101,42 +114,50 @@ export default function ApplyPage() {
         headers: {
           'Accept': 'application/json',
         },
-      })
+      });
+      
+      // Log the raw response for debugging
+      const responseText = await res.text();
+      console.log('Raw response:', responseText);
       
       try {
-        const responseData = await res.json()
+        const responseData = responseText ? JSON.parse(responseText) : {};
         
         if (res.ok) {
-          console.log('Submission successful:', responseData)
-          setSuccess(true)
+          console.log('Submission successful:', responseData);
+          setSuccess(true);
           
           // Clear form
-          setFirstName('')
-          setLastName('')
-          setEmail('')
-          setEducationalAttainment('')
-          setSchoolName('')
-          setPhoneNumber('')
-          setAddress('')
-          setInterview(null)
-          setResume(null)
+          setFirstName('');
+          setLastName('');
+          setEmail('');
+          setEducationalAttainment('');
+          setSchoolName('');
+          setPhoneNumber('');
+          setAddress('');
+          setInterview(null);
+          setResume(null);
           
           // Reset file input
-          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-          if (fileInput) fileInput.value = ''
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) fileInput.value = '';
           
           // Redirect after delay
           setTimeout(() => {
-            router.push("/home")
-          }, 1500)
+            router.push("/home");
+          }, 1500);
         } else {
           // Handle error response
-          console.error('Submission failed:', responseData)
-          alert(`Submission failed: ${responseData.error || 'Unknown error'}\n${responseData.details || ''}`)
+          const errorMessage = responseData.error || 'Unknown error';
+          const errorDetails = responseData.details || responseText || 'No details available';
+          console.error('Submission failed:', { status: res.status, errorMessage, errorDetails });
+          
+          // Show more detailed error message
+          alert(`Submission failed (${res.status}): ${errorMessage}\n\n${errorDetails}`);
         }
       } catch (jsonError) {
-        console.error('Error parsing JSON response:', jsonError)
-        throw new Error('Invalid response from server')
+        console.error('Error parsing JSON response:', { error: jsonError, responseText });
+        throw new Error(`Failed to process server response. Status: ${res.status}`);
       }
     } catch (error) {
       console.error('Submission error:', error)
