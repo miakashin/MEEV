@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import logo from '../../public/LOGO.png'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -14,11 +15,11 @@ export default function Navbar() {
           <Link href="/" className="flex items-center space-x-2 py-2">
             <div className="relative w-10 h-10 md:w-12 md:h-12">
               <Image
-                src="/LOGO.png"
+                src={logo}
                 alt="MEEV Logo"
-                fill
-                sizes="(max-width: 768px) 40px, 48px"
-                className="object-contain"
+                width={48}
+                height={48}
+                className="object-contain w-full h-full"
                 priority
               />
             </div>

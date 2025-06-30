@@ -10,8 +10,17 @@ const nextConfig = {
     optimizePackageImports: ['nodemailer'],
   },
   images: {
-    // Enable image optimization for Vercel
-    domains: ['vercel.com'],
+    // Allow all domains for now, you can restrict this in production
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+    // Enable optimization for local images
+    domains: ['vercel.com', 'www.meevassist.com', 'localhost'],
+    // Disable image optimization if you're still having issues
+    // unoptimized: true,
   },
   // Enable trailing slashes for consistent URLs
   trailingSlash: true,

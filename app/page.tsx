@@ -6,6 +6,7 @@ import Link from 'next/link'
 import IntroVideo from '../components/IntroVideo'
 import RegisterModal from '../components/RegisterModal'
 import LoginModal from '../components/LoginModal'
+import logo from '../public/LOGO.png'
 // import Navbar from '../components/Navbar'  // Uncomment if you want the Navbar here
 
 export default function Home() {
@@ -29,7 +30,7 @@ export default function Home() {
             <div className="max-w-4xl mx-auto text-center">
               <div className="mb-8">
                 <Image
-                  src="/LOGO.png"
+                  src={logo}
                   alt="MEEV Logo"
                   width={300}
                   height={300}
