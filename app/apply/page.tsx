@@ -1,0 +1,170 @@
+"use client"
+import React, { useState } from 'react'
+import DatePicker from 'react-datepicker'
+import 'react-datepicker/dist/react-datepicker.css'
+import { getDay, setHours, setMinutes } from 'date-fns'
+import { toZonedTime, fromZonedTime } from 'date-fns-tz' // Corrected import names: utcToZonedTime -> toZonedTime, zonedTimeToUtc -> fromZonedTime
+import { useMemo } from 'react' // Added for useMemo
+import { useRouter } from 'next/navigation'
+
+export default function ApplyPage() {
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [educationalAttainment, setEducationalAttainment] = useState('')
+  const [schoolName, setSchoolName] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [address, setAddress] = useState('')
+  const [interview, setInterview] = useState<Date | null>(null)
+  const [resume, setResume] = useState<File | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+
+  const targetTimeZone = 'America/New_York'
+
+  // Availability: 0 (Sun) to 6 (Sat) in ET, with specific slots
+  const dailyAvailabilityET: { [key: number]: Array<{ hour: number; minute: number }> } = {
+    1: [ // Monday ET
+      { hour: 11, minute: 30 }, { hour: 14, minute: 0 }, { hour: 17, minute: 0 },
+    ],
+    2: [ // Tuesday ET
+      { hour: 11, minute: 30 }, { hour: 14, minute: 0 }, { hour: 17, minute: 0 },
+    ],
+    3: [ // Wednesday ET
+      { hour: 11, minute: 30 }, { hour: 14, minute: 0 }, { hour: 17, minute: 0 },
+    ],
+    4: [ // Thursday ET
+      { hour: 11, minute: 30 }, { hour: 14, minute: 0 }, { hour: 17, minute: 0 },
+    ],
+    5: [ // Friday ET
+      { hour: 11, minute: 30 }, { hour: 14, minute: 0 }, { hour: 17, minute: 0 },
+    ],
+    6: [ // Saturday ET
+      { hour: 10, minute: 0 }, { hour: 11, minute: 0 }, { hour: 14, minute: 0 }, { hour: 16, minute: 0 },
+    ],
+  };
+
+  // --- Availability Logic ---
+  // Check if the selected date is an available day with configured slots in ET
+  const isAvailableDayInET = (date: Date) => {
+    const dateInET = toZonedTime(date, targetTimeZone);
+    const dayOfWeekInET = getDay(dateInET); // 0 (Sunday) - 6 (Saturday)
+    return dailyAvailabilityET[dayOfWeekInET] !== undefined && dailyAvailabilityET[dayOfWeekInET].length > 0;
+  };
+
+  // Generate specific time slots based on the selected day's availability in ET, converted to user's local time
+  const localTimesForETSlots = useMemo(() => {
+    if (!interview) return []; // No date selected yet
+
+    const selectedDateInET = toZonedTime(interview, targetTimeZone);
+    const dayOfWeekInET = getDay(selectedDateInET);
+    const timeSlotsForDay = dailyAvailabilityET[dayOfWeekInET];
+
+    if (!timeSlotsForDay || timeSlotsForDay.length === 0) return []; // Day is not configured or has no slots
+
+    const slots = timeSlotsForDay.map(slot => {
+      // Create a date object for the selected day at the specific hour and minute in ET
+      let specificTimeInET = setHours(setMinutes(selectedDateInET, slot.minute), slot.hour);
+      // Convert this ET time to the user's local time zone for the DatePicker list
+      return toZonedTime(specificTimeInET, Intl.DateTimeFormat().resolvedOptions().timeZone);
+    });
+    return slots;
+  }, [interview, targetTimeZone]); // Recalculate when interview date or timezone changes
+  // --- End Availability Logic ---
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    // Redundant FormData initialization removed
+    try {
+      const formData = new FormData()
+      formData.append('firstName', firstName)
+      formData.append('lastName', lastName)
+      formData.append('email', email)
+      formData.append('educationalAttainment', educationalAttainment)
+      formData.append('schoolName', schoolName)
+      formData.append('phoneNumber', phoneNumber)
+      formData.append('address', address)
+      formData.append('interview', interview ? interview.toISOString() : '') // Submit as UTC ISO string
+      formData.append('formType', 'applicant')
+      if (resume) formData.append('resume', resume)
+
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        body: formData,
+      })
+      setLoading(false)
+      
+      if (res.ok) {
+        const responseData = await res.json()
+        console.log('Submission response:', responseData)
+        setSuccess(true)
+        setTimeout(() => {
+          router.push("/home")
+        }, 1500)
+      } else {
+        // Handle error response
+        const errorData = await res.json()
+        console.error('Submission error:', errorData)
+        alert(`Submission failed: ${errorData.message || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Submission error:', error)
+      setLoading(false)
+      alert('An error occurred while submitting the application. Please try again.')
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-indigo-100 to-white py-12">
+      <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white/90 rounded-2xl shadow-xl p-8 transition-transform duration-300 hover:scale-105 hover:shadow-2xl border border-blue-100" encType="multipart/form-data">
+        <h2 className="text-3xl font-bold text-center text-blue-700 mb-6">Applicant Form</h2>
+        <div className="space-y-4">
+          <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="First Name" required className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <input value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Last Name" required className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" required className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <input value={educationalAttainment} onChange={e => setEducationalAttainment(e.target.value)} placeholder="Educational Attainment" required className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <input value={schoolName} onChange={e => setSchoolName(e.target.value)} placeholder="School Name" required className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <input value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} placeholder="Phone Number" className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Address" className="w-full p-3 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition" />
+          <div>
+            <DatePicker
+              selected={interview}
+              onChange={date => setInterview(date)}
+              showTimeSelect
+              filterDate={isAvailableDayInET} // Check if day has available slots in ET
+              includeTimes={localTimesForETSlots} // Provide specific ET slots converted to local time
+              dateFormat="MMMM d, yyyy h:mm aa"
+              placeholderText="Select an available interview slot"
+              className="w-full p-2 border border-gray-300 rounded-md"
+              minDate={new Date()} // Prevent selecting past local dates
+              timeIntervals={30} // Suggest 30-min intervals in UI, though includeTimes is definitive
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Specific 30-minute slots are shown in your local timezone. Availability is based on US Eastern Time and varies by day.
+            </p>
+          </div>
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">Upload Resume (PDF, DOCX):</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={e => setResume(e.target.files?.[0] || null)}
+              className="w-full p-2 border rounded-lg"
+              required
+            />
+          </div>
+        </div>
+        <button type="submit" disabled={loading} className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow transition disabled:opacity-60 disabled:cursor-not-allowed">
+          {loading ? 'Submitting...' : 'Submit Application'}
+        </button>
+        {success && (
+          <p className="text-green-600 mt-4 text-center font-semibold">
+            Application submitted! Redirecting to home...
+          </p>
+        )}
+      </form>
+    </div>
+  )
+}

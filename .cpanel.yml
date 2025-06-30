@@ -1,0 +1,11 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/meevdfsg/public_html/
+    - export NODE_ENV=production
+    - cd /home/meevdfsg/public_html
+    - rm -rf *
+    - cp -R /home/meevdfsg/public_html/out/* .
+    - chown -R meevdfsg:meevdfsg .
+    - chmod -R 755 .
+    - chmod 644 *.html *.css *.js *.ico *.png *.jpg *.jpeg *.svg *.json *.xml *.txt *.map
