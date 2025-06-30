@@ -1,22 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Only enable static export for non-API routes
-  output: 'export',
-  // Disable static optimization for API routes
+  // Remove output: 'export' for Vercel deployment
+  // Enable server components by default
   experimental: {
-    outputFileTracingExcludes: {
-      '*': [
-        'node_modules/@swc/core-linux-x64-gnu',
-        'node_modules/@swc/core-linux-x64-musl',
-        'node_modules/esbuild-linux-64/bin/esbuild',
-      ],
-    },
+    // Enable server actions
+    serverActions: true,
+    // Optimize package imports for server components
+    optimizePackageImports: ['nodemailer'],
   },
   images: {
-    unoptimized: true, // Disable Image Optimization API as it's not needed for static export
+    // Enable image optimization for Vercel
+    domains: ['vercel.com'],
   },
-  trailingSlash: true, // Ensure trailing slashes for static export
+  // Enable trailing slashes for consistent URLs
+  trailingSlash: true,
   // Add basePath if your site is served from a subdirectory
   // basePath: '/your-base-path',
   // Configure webpack to handle Node.js modules
@@ -34,6 +32,6 @@ const nextConfig = {
     }
     return config;
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

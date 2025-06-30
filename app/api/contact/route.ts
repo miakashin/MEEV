@@ -4,9 +4,6 @@ export const runtime = 'nodejs';
 // Re-export the POST handler from route-handler.ts
 export { POST } from './route-handler';
 
-// This is a workaround for TypeScript to recognize the route
-export const dynamic = 'force-dynamic';
-
 // Export an empty GET handler to prevent 405 errors
 export async function GET() {
   return new Response(

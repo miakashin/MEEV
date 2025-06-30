@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "export": "next build && next export"
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@types/nodemailer": "^6.4.14",
