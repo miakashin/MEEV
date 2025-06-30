@@ -2,19 +2,20 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
 
 export default function PricingPage() {
-  const searchParams = useSearchParams()
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   useEffect(() => {
-    if (searchParams?.get('success') === 'true') {
+    // Only access searchParams in useEffect to avoid static generation issues
+    const success = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('success') : null;
+    if (success === 'true') {
       setShowSuccessMessage(true)
       // Hide the message after 5 seconds
-      setTimeout(() => setShowSuccessMessage(false), 5000)
+      const timer = setTimeout(() => setShowSuccessMessage(false), 5000)
+      return () => clearTimeout(timer)
     }
-  }, [searchParams])
+  }, [])
 
   const tiers = [
     {
