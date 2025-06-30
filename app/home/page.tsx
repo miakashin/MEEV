@@ -3,7 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import logo from '../../public/LOGO.png'
+// No need to import, we'll use the path directly
 
 export default function HomeNoIntro() {
   return (
@@ -14,7 +14,7 @@ export default function HomeNoIntro() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-8">
               <Image
-                src={logo}
+                src="/LOGO.png"
                 alt="MEEV Logo"
                 width={300}
                 height={300}

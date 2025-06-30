@@ -19,8 +19,12 @@ const nextConfig = {
     ],
     // Enable optimization for local images
     domains: ['vercel.com', 'www.meevassist.com', 'localhost'],
-    // Disable image optimization if you're still having issues
-    // unoptimized: true,
+    // Enable image optimization for local files
+    unoptimized: false,
+    // Ensure public directory is included
+    path: '/_next/image',
+    // Enable device sizes for responsive images
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
   },
   // Enable trailing slashes for consistent URLs
   trailingSlash: true,

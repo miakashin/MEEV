@@ -1,7 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import logo from '../../public/LOGO.png'
+// No need to import, we'll use the path directly
 
 const Footer = () => {
   return (
@@ -12,7 +12,7 @@ const Footer = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <Image
-                src={logo}
+                src="/LOGO.png"
                 alt="MEEV Logo"
                 width={80}
                 height={80}

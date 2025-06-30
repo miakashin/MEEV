@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import logo from '../../public/LOGO.png'
+// No need to import, we'll use the path directly
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -15,7 +15,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center space-x-2 py-2">
             <div className="relative w-10 h-10 md:w-12 md:h-12">
               <Image
-                src={logo}
+                src="/LOGO.png"
                 alt="MEEV Logo"
                 width={48}
                 height={48}
