@@ -1,5 +1,5 @@
-// Use Edge Runtime for better performance on Vercel
-export const runtime = 'edge';
+// Use Node.js Runtime for Nodemailer compatibility
+export const runtime = 'nodejs';
 
 // Re-export the POST handler from route-handler.ts
 export { POST } from './route-handler';
