@@ -468,8 +468,23 @@ export default function IntroVideo() {
     };
   }, [safePause]);
 
-  // Don't render anything if video is not available or not visible
+  // Don't render anything if not visible
   if (!isVisible) return null;
+
+  // Debug information
+  const debugInfo = {
+    isPlaying,
+    isMuted,
+    videoAvailable,
+    currentFormat: videoFormats[currentFormatIndex.current]?.src || 'none',
+    readyState: videoRef.current?.readyState,
+    networkState: videoRef.current?.networkState,
+    error: videoRef.current?.error,
+    currentSrc: videoRef.current?.currentSrc,
+    videoWidth: videoRef.current?.videoWidth,
+    videoHeight: videoRef.current?.videoHeight,
+    duration: videoRef.current?.duration
+  };
 
   if (!videoAvailable) {
     return (
@@ -477,6 +492,11 @@ export default function IntroVideo() {
         <div className="text-white text-center p-8">
           <h2 className="text-2xl font-bold mb-4">Video Unavailable</h2>
           <p className="mb-4">We're having trouble loading the video. This might be due to an unsupported format or network issues.</p>
+          <div className="bg-gray-800 p-4 rounded-lg text-left text-sm mb-4 overflow-auto max-h-40">
+            <pre className="whitespace-pre-wrap">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </div>
           <button 
             onClick={() => window.location.reload()}
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
@@ -490,47 +510,75 @@ export default function IntroVideo() {
 
   return (
     <div className={`fixed inset-0 z-50 bg-black transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      <video
-        ref={videoRef}
-        className="w-full h-full object-cover"
-        playsInline
-        muted={isMuted}
-        autoPlay
-        loop={false}
-        preload="auto"
-        width="100%"
-        height="100%"
-        style={{
-          backgroundColor: 'black',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          zIndex: 50
-        }}
-        onError={handleError}
-        onCanPlayThrough={(e) => {
-          debug(`[${instanceId.current}] Video can play through`, e);
-          const video = e.target as HTMLVideoElement;
-          video.play().catch(err => debug(`[${instanceId.current}] Error in canplaythrough play:`, err));
-        }}
-        onStalled={(e) => debug(`[${instanceId.current}] Video stalled`, e)}
-        onWaiting={(e) => debug(`[${instanceId.current}] Video waiting`, e)}
-        onLoadStart={(e) => debug(`[${instanceId.current}] Video load started`, e)}
-        onLoadedData={(e) => {
-          debug(`[${instanceId.current}] Video loaded data`, {
-            readyState: (e.target as HTMLVideoElement).readyState,
-            networkState: (e.target as HTMLVideoElement).networkState
-          });
-        }}
-      >
-        {/* Sources will be added dynamically */}
-        <p className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          Your browser does not support the video tag.
-        </p>
-      </video>
+      {/* Debug overlay */}
+      <div className="absolute bottom-4 left-4 z-50 bg-black bg-opacity-70 text-white p-4 rounded-lg text-xs max-w-md max-h-48 overflow-auto">
+        <h3 className="font-bold mb-2">Video Debug Info:</h3>
+        <pre className="whitespace-pre-wrap text-xs">
+          {JSON.stringify(debugInfo, null, 2)}
+        </pre>
+      </div>
+
+      {/* Video element */}
+      <div className="relative w-full h-full">
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          playsInline
+          muted={isMuted}
+          autoPlay
+          loop={false}
+          preload="auto"
+          width="100%"
+          height="100%"
+          style={{
+            backgroundColor: 'black',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            zIndex: 10
+          }}
+          onError={handleError}
+          onCanPlayThrough={(e) => {
+            debug(`[${instanceId.current}] Video can play through`, e);
+            const video = e.target as HTMLVideoElement;
+            video.play().catch(err => debug(`[${instanceId.current}] Error in canplaythrough play:`, err));
+          }}
+          onStalled={(e) => debug(`[${instanceId.current}] Video stalled`, e)}
+          onWaiting={(e) => debug(`[${instanceId.current}] Video waiting`, e)}
+          onLoadStart={(e) => debug(`[${instanceId.current}] Video load started`, e)}
+          onLoadedData={(e) => {
+            debug(`[${instanceId.current}] Video loaded data`, {
+              readyState: (e.target as HTMLVideoElement).readyState,
+              networkState: (e.target as HTMLVideoElement).networkState
+            });
+          }}
+        >
+          {/* Sources will be added dynamically */}
+          <p className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+            Your browser does not support the video tag.
+            <br />
+            <span className="text-sm opacity-70">
+              Current source: {videoFormats[currentFormatIndex.current]?.src || 'none'}
+            </span>
+          </p>
+        </video>
+
+        {/* Loading indicator */}
+        {!isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-2"></div>
+              <p>Loading video...</p>
+              <p className="text-xs opacity-70 mt-2">
+                {videoFormats[currentFormatIndex.current]?.src}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
       
       {/* Mute/Unmute Button */}
       <button
