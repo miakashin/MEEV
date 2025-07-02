@@ -13,6 +13,10 @@ function getPlanPrice(plan: string): string {
 
 // Function to get recipient emails based on form type
 function getRecipientEmails(formType: string): string[] {
+  // For job applications, send to careers email
+  if (formType === 'applicant') {
+    return ['careers.application@meevassist.com'];
+  }
   // For the get-started form, always send to virtual.services@meevassist.com
   if (formType === 'get-started') {
     return ['virtual.services@meevassist.com'];
