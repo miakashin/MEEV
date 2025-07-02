@@ -1,99 +1,144 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 
 export default function IntroVideo() {
-  const [isVisible, setIsVisible] = useState(true)
-  const [isMuted, setIsMuted] = useState(false)
-  const [videoAvailable, setVideoAvailable] = useState(true)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isVisible, setIsVisible] = useState(true);
+  const [isMuted, setIsMuted] = useState(true); // Start muted by default
+  const [videoAvailable, setVideoAvailable] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cleanupRef = useRef<() => void>();
 
-  useEffect(() => {
+  // Handle video playback
+  const handlePlay = useCallback(async () => {
     const video = videoRef.current;
-    let playPromise: Promise<void> | null = null;
-    
-    const handleEnded = () => {
-      setIsVisible(false);
-    };
-    
-    const handleError = () => {
-      console.error('Error loading video');
+    if (!video) return;
+
+    try {
+      // Set video source if not already set
+      if (!video.src) {
+        video.src = '/videos/intro.mp4';
+      }
+
+      // Set initial volume
+      video.volume = 0.5;
+      
+      // Try to play the video
+      const playPromise = video.play();
+      
+      if (playPromise !== undefined) {
+        await playPromise
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(error => {
+            if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
+              // If autoplay is not allowed, mute and try again
+              video.muted = true;
+              setIsMuted(true);
+              return video.play().then(() => {
+                setIsPlaying(true);
+              });
+            }
+            throw error;
+          });
+      }
+    } catch (error) {
+      console.error('Error handling video playback:', error);
       setVideoAvailable(false);
       setIsVisible(false);
-    };
-    
-    const handlePlay = async () => {
-      try {
-        if (video) {
-          video.muted = false;
-          playPromise = video.play();
-          
-          if (playPromise !== undefined) {
-            await playPromise.catch(error => {
-              if (error.name === "NotAllowedError") {
-                video.muted = true;
-                setIsMuted(true);
-                return video.play();
-              }
-              throw error;
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error playing video:', error);
-        setVideoAvailable(false);
-        setIsVisible(false);
+    }
+  }, []);
+
+  // Handle video end
+  const handleEnded = useCallback(() => {
+    setIsVisible(false);
+    setIsPlaying(false);
+  }, []);
+
+  // Handle video errors
+  const handleError = useCallback(() => {
+    console.error('Error loading video');
+    setVideoAvailable(false);
+    setIsVisible(false);
+    setIsPlaying(false);
+  }, []);
+
+  // Handle visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (document.hidden) {
+        // Page is hidden, pause video
+        video.pause();
+      } else if (isPlaying) {
+        // Page is visible again, resume playback if it was playing
+        video.play().catch(console.error);
       }
     };
-    
-    if (video) {
-      video.addEventListener('ended', handleEnded);
-      video.addEventListener('error', handleError);
-      handlePlay();
-    }
-    
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-      if (video) {
-        // Cancel any ongoing animations
-        video.style.animation = 'none';
-        
-        // Pause and reset the video
-        video.pause();
-        video.currentTime = 0;
-        
-        // Remove event listeners
-        video.removeEventListener('ended', handleEnded);
-        video.removeEventListener('error', handleError);
-        
-        // Clean up any pending play promises
-        if (playPromise) {
-          playPromise
-            .then(() => {
-              if (video) {
-                video.pause();
-                video.currentTime = 0;
-              }
-            })
-            .catch(() => {});
-        }
-        
-        // Reset the video element
-        if (video.parentNode) {
-          video.src = '';
-          video.load();
-        }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPlaying]);
+
+  // Set up video element
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Add event listeners
+    video.addEventListener('play', () => setIsPlaying(true));
+    video.addEventListener('pause', () => setIsPlaying(false));
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('error', handleError);
+
+    // Start playback
+    handlePlay();
+
+    // Cleanup function
+    cleanupRef.current = () => {
+      video.pause();
+      video.removeEventListener('play', () => setIsPlaying(true));
+      video.removeEventListener('pause', () => setIsPlaying(false));
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('error', handleError);
+      
+      // Don't reset the source to prevent potential errors
+      // The browser will handle cleanup when the element is removed
+    };
+
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
       }
     };
   }, []);
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted
-      setIsMuted(!isMuted)
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+    
+    // If unmuting, try to play the video
+    if (!video.muted && video.paused) {
+      video.play().catch(error => {
+        console.error('Error resuming video:', error);
+        // If unmuting fails, mute again
+        video.muted = true;
+        setIsMuted(true);
+      });
     }
-  }
+  }, []);
 
-  if (!isVisible || !videoAvailable) return null
+  // Don't render anything if video is not available or not visible
+  if (!isVisible || !videoAvailable) return null;
 
   return (
     <div className={`fixed inset-0 z-50 bg-black transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
@@ -103,10 +148,8 @@ export default function IntroVideo() {
         playsInline
         muted={isMuted}
         autoPlay
-        onError={() => {
-          setVideoAvailable(false);
-          setIsVisible(false);
-        }}
+        preload="auto"
+        onError={handleError}
       >
         <source src="/videos/intro.mp4" type="video/mp4" />
         Your browser does not support the video tag.
