@@ -26,8 +26,12 @@ export default function IntroVideo() {
 
   // List of supported video formats in order of preference
   const videoFormats = [
-    { type: 'video/mp4', src: '/videos/Clean Outlines Logo Reveal_1080p.mp4' },
-    { type: 'video/mp4', src: '/videos/intro.mp4' } // Fallback to intro.mp4 if exists
+    // Encode spaces in the filename
+    { type: 'video/mp4', src: '/videos/Clean%20Outlines%20Logo%20Reveal_1080p.mp4' },
+    // Also try with spaces replaced by hyphens
+    { type: 'video/mp4', src: '/videos/Clean-Outlines-Logo-Reveal_1080p.mp4' },
+    // Fallback to a simpler filename if exists
+    { type: 'video/mp4', src: '/videos/intro.mp4' }
   ];
 
   // Current format being tried
@@ -231,7 +235,7 @@ export default function IntroVideo() {
         1: 'MEDIA_ERR_ABORTED - Fetching process aborted by user',
         2: 'MEDIA_ERR_NETWORK - Error occurred when downloading',
         3: 'MEDIA_ERR_DECODE - Error occurred when decoding',
-        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - Unsupported source/format'
+        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - Unsupported source/format or file not found'
       };
       
       // Prepare error information
@@ -247,11 +251,30 @@ export default function IntroVideo() {
           (errorStates[error.code] || `Unknown error code: ${error.code}`) : 
           'No error code',
         timestamp: new Date().toISOString(),
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a'
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a',
+        sources: target.querySelectorAll('source'),
+        videoElement: {
+          readyState: target.readyState,
+          networkState: target.networkState,
+          error: target.error,
+          currentTime: target.currentTime,
+          duration: target.duration,
+          videoWidth: target.videoWidth,
+          videoHeight: target.videoHeight,
+          buffered: target.buffered?.length ? target.buffered.length : 0
+        }
       };
       
       // Log detailed error information
       console.error(`[${instance}] Video error:`, errorInfo);
+      
+      // Try next format if available
+      if (error?.code === 4) { // MEDIA_ERR_SRC_NOT_SUPPORTED
+        const nextFormat = tryNextFormat(target, instance);
+        if (!nextFormat) {
+          setVideoAvailable(false);
+        }
+      }
       
       // Log to error tracking service if available
       if (typeof window !== 'undefined' && (window as any).Sentry) {
@@ -261,16 +284,7 @@ export default function IntroVideo() {
       }
       
       // Log additional debugging information
-      debug(`[${instance}] Video element state on error:`, {
-        paused: target?.paused,
-        ended: target?.ended,
-        seeking: target?.seeking,
-        buffered: target?.buffered?.length ? target.buffered.length : 0,
-        videoWidth: target?.videoWidth,
-        videoHeight: target?.videoHeight,
-        duration: target?.duration,
-        currentTime: target?.currentTime
-      });
+      debug(`[${instance}] Video element state on error:`, errorInfo.videoElement);
     } catch (error) {
       console.error('Error in error handler:', error);
     } finally {
