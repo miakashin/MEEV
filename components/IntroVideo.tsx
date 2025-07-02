@@ -9,26 +9,82 @@ export default function IntroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    const video = videoRef.current
-    if (video) {
-      video.muted = false
-      const playPromise = video.play()
-      
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          if (error.name === "NotAllowedError") {
-            video.muted = true
-            setIsMuted(true)
-            video.play()
+    const video = videoRef.current;
+    let playPromise: Promise<void> | null = null;
+    
+    const handleEnded = () => {
+      setIsVisible(false);
+    };
+    
+    const handleError = () => {
+      console.error('Error loading video');
+      setVideoAvailable(false);
+      setIsVisible(false);
+    };
+    
+    const handlePlay = async () => {
+      try {
+        if (video) {
+          video.muted = false;
+          playPromise = video.play();
+          
+          if (playPromise !== undefined) {
+            await playPromise.catch(error => {
+              if (error.name === "NotAllowedError") {
+                video.muted = true;
+                setIsMuted(true);
+                return video.play();
+              }
+              throw error;
+            });
           }
-        })
+        }
+      } catch (error) {
+        console.error('Error playing video:', error);
+        setVideoAvailable(false);
+        setIsVisible(false);
       }
-      
-      video.addEventListener('ended', () => {
-        setIsVisible(false)
-      })
+    };
+    
+    if (video) {
+      video.addEventListener('ended', handleEnded);
+      video.addEventListener('error', handleError);
+      handlePlay();
     }
-  }, [])
+    
+    return () => {
+      if (video) {
+        // Cancel any ongoing animations
+        video.style.animation = 'none';
+        
+        // Pause and reset the video
+        video.pause();
+        video.currentTime = 0;
+        
+        // Remove event listeners
+        video.removeEventListener('ended', handleEnded);
+        video.removeEventListener('error', handleError);
+        
+        // Clean up any pending play promises
+        if (playPromise) {
+          playPromise
+            .then(() => {
+              if (video) {
+                video.pause();
+                video.currentTime = 0;
+              }
+            })
+            .catch(() => {});
+        }
+        
+        // Reset the video element
+        if (video.parentNode) {
+          video.src = '';
+          video.load();
+        }
+      }
+    };
+  }, []);
 
   const toggleMute = () => {
     if (videoRef.current) {
