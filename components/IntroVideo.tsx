@@ -57,12 +57,46 @@ export default function IntroVideo() {
     setIsPlaying(false);
   }, []);
 
-  // Handle video errors
-  const handleError = useCallback(() => {
-    console.error('Error loading video');
-    setVideoAvailable(false);
-    setIsVisible(false);
-    setIsPlaying(false);
+  // Handle video errors with proper TypeScript types
+  const handleError = useCallback((event: Event | React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    try {
+      const target = (event.target || event.currentTarget) as HTMLVideoElement;
+      const error = target.error;
+      
+      // Define error states
+      const errorStates: Record<number, string> = {
+        1: 'MEDIA_ERR_ABORTED - Fetching process aborted by user',
+        2: 'MEDIA_ERR_NETWORK - Error occurred when downloading',
+        3: 'MEDIA_ERR_DECODE - Error occurred when decoding',
+        4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - Unsupported source/format'
+      };
+      
+      // Prepare error information
+      const errorInfo = {
+        code: error?.code,
+        message: error?.message || 'Unknown error',
+        eventType: event?.type,
+        currentSrc: target?.currentSrc,
+        networkState: target?.networkState,
+        readyState: target?.readyState,
+        errorState: error?.code !== undefined ? errorStates[error.code] || `Unknown error code: ${error.code}` : 'No error code'
+      };
+      
+      console.error('Video error:', errorInfo);
+      
+      // Log to error tracking service if available
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(new Error('Video playback error'), {
+          extra: errorInfo
+        });
+      }
+    } catch (error) {
+      console.error('Error in error handler:', error);
+    } finally {
+      setVideoAvailable(false);
+      setIsVisible(false);
+      setIsPlaying(false);
+    }
   }, []);
 
   // Handle visibility changes
@@ -91,25 +125,35 @@ export default function IntroVideo() {
     const video = videoRef.current;
     if (!video) return;
 
-    // Add event listeners
-    video.addEventListener('play', () => setIsPlaying(true));
-    video.addEventListener('pause', () => setIsPlaying(false));
-    video.addEventListener('ended', handleEnded);
-    video.addEventListener('error', handleError);
+    // Event handler wrappers for proper TypeScript types
+    const handlePlayEvent = () => setIsPlaying(true);
+    const handlePauseEvent = () => setIsPlaying(false);
+    const handleEndedEvent = () => handleEnded();
+    const handleErrorEvent = (e: Event) => handleError(e);
+
+    // Add event listeners with proper types
+    video.addEventListener('play', handlePlayEvent);
+    video.addEventListener('pause', handlePauseEvent);
+    video.addEventListener('ended', handleEndedEvent);
+    video.addEventListener('error', handleErrorEvent);
 
     // Start playback
     handlePlay();
 
     // Cleanup function
     cleanupRef.current = () => {
-      video.pause();
-      video.removeEventListener('play', () => setIsPlaying(true));
-      video.removeEventListener('pause', () => setIsPlaying(false));
-      video.removeEventListener('ended', handleEnded);
-      video.removeEventListener('error', handleError);
-      
-      // Don't reset the source to prevent potential errors
-      // The browser will handle cleanup when the element is removed
+      try {
+        video.pause();
+        video.removeEventListener('play', handlePlayEvent);
+        video.removeEventListener('pause', handlePauseEvent);
+        video.removeEventListener('ended', handleEndedEvent);
+        video.removeEventListener('error', handleErrorEvent);
+        
+        // Don't reset the source to prevent potential errors
+        // The browser will handle cleanup when the element is removed
+      } catch (error) {
+        console.error('Error during cleanup:', error);
+      }
     };
 
     return () => {
