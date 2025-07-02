@@ -26,9 +26,8 @@ export default function IntroVideo() {
 
   // List of supported video formats in order of preference
   const videoFormats = [
-    { type: 'video/mp4', src: '/videos/intro.mp4' },
-    { type: 'video/webm', src: '/videos/intro.webm' },
-    { type: 'video/ogg', src: '/videos/intro.ogv' }
+    { type: 'video/mp4', src: '/videos/Clean Outlines Logo Reveal_1080p.mp4' },
+    { type: 'video/mp4', src: '/videos/intro.mp4' } // Fallback to intro.mp4 if exists
   ];
 
   // Current format being tried
