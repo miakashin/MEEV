@@ -102,6 +102,73 @@ export default function IntroVideo() {
     return false;
   }, [safePause]);
 
+  // Set up video source and event listeners
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const instance = instanceId.current;
+    debug(`[${instance}] Setting up video source`);
+
+    // Function to load a specific video format
+    const loadVideoSource = async (formatIndex: number) => {
+      if (formatIndex >= videoFormats.length) {
+        debug(`[${instance}] No more video formats to try`);
+        setVideoAvailable(false);
+        return false;
+      }
+
+      const format = videoFormats[formatIndex];
+      debug(`[${instance}] Trying video format:`, format);
+
+      try {
+        // Create a new source element
+        const source = document.createElement('source');
+        source.src = format.src;
+        source.type = format.type;
+
+        // Clear existing sources
+        while (video.firstChild) {
+          video.removeChild(video.firstChild);
+        }
+
+        // Add the new source
+        video.appendChild(source);
+        currentFormatIndex.current = formatIndex;
+
+        // Log before loading
+        console.log(`[${instance}] Loading video source:`, format.src);
+        
+        // Force a new load of the video
+        await video.load();
+        
+        // Log after loading
+        console.log(`[${instance}] Video load completed for:`, format.src, {
+          readyState: video.readyState,
+          networkState: video.networkState,
+          error: video.error
+        });
+
+        // If we have a valid source, try to play
+        if (video.readyState >= 1) { // HAVE_ENOUGH_DATA
+          console.log(`[${instance}] Video has enough data, attempting to play`);
+          await video.play().catch(e => {
+            console.error(`[${instance}] Error playing video:`, e);
+            throw e; // Rethrow to trigger the catch block
+          });
+          return true;
+        }
+        
+        return true;
+      } catch (error) {
+        console.error(`[${instance}] Error with video source ${format.src}:`, error);
+        // Try next format
+        return loadVideoSource(formatIndex + 1);
+      }
+    };
+    return false;
+  }, [safePause]);
+
   // Handle video playback
   const handlePlay = useCallback(async () => {
     const video = videoRef.current;
