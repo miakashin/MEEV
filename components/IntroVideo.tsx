@@ -5,6 +5,7 @@ import React, { useEffect, useState, useRef } from 'react'
 export default function IntroVideo() {
   const [isVisible, setIsVisible] = useState(true)
   const [isMuted, setIsMuted] = useState(false)
+  const [videoAvailable, setVideoAvailable] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function IntroVideo() {
     }
   }
 
-  if (!isVisible) return null
+  if (!isVisible || !videoAvailable) return null
 
   return (
     <div className={`fixed inset-0 z-50 bg-black transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
@@ -46,8 +47,12 @@ export default function IntroVideo() {
         playsInline
         muted={isMuted}
         autoPlay
+        onError={() => {
+          setVideoAvailable(false);
+          setIsVisible(false);
+        }}
       >
-        <source src="/intro.mp4" type="video/mp4" />
+        <source src="/videos/intro.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       
