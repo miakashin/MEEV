@@ -15,6 +15,8 @@ export default function IntroVideo() {
   const [videoAvailable, setVideoAvailable] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const isPlayingRef = useRef(false);
+  const playPromise = useRef<Promise<void>>();
   const cleanupRef = useRef<() => void>();
   
   // Unique ID for this component instance
@@ -32,30 +34,71 @@ export default function IntroVideo() {
   // Current format being tried
   const currentFormatIndex = useRef(0);
   
+  // Safe play function that handles promises correctly
+  const safePlay = useCallback(async (video: HTMLVideoElement): Promise<boolean> => {
+    try {
+      if (isPlayingRef.current) return true;
+      
+      isPlayingRef.current = true;
+      playPromise.current = video.play();
+      
+      if (playPromise.current !== undefined) {
+        await playPromise.current;
+        return true;
+      }
+      return false;
+    } catch (error) {
+      debug(`[${instanceId.current}] Error in safePlay:`, error);
+      isPlayingRef.current = false;
+      return false;
+    }
+  }, []);
+  
+  // Safe pause function that handles promises correctly
+  const safePause = useCallback(async (video: HTMLVideoElement): Promise<void> => {
+    try {
+      if (!isPlayingRef.current) return;
+      
+      if (playPromise.current) {
+        await playPromise.current;
+      }
+      
+      video.pause();
+      isPlayingRef.current = false;
+    } catch (error) {
+      debug(`[${instanceId.current}] Error in safePause:`, error);
+    }
+  }, []);
+  
   // Try loading the next available video format
-  const tryNextFormat = useCallback((video: HTMLVideoElement, instance: string) => {
+  const tryNextFormat = useCallback(async (video: HTMLVideoElement, instance: string) => {
     currentFormatIndex.current++;
     
     if (currentFormatIndex.current < videoFormats.length) {
       const { type, src } = videoFormats[currentFormatIndex.current];
       debug(`[${instance}] Trying next video format:`, { type, src });
       
-      const source = document.createElement('source');
-      source.src = src;
-      source.type = type;
+      // Pause and clear current video
+      await safePause(video);
       
       // Clear existing sources
       while (video.firstChild) {
         video.removeChild(video.firstChild);
       }
       
+      // Add new source
+      const source = document.createElement('source');
+      source.src = src;
+      source.type = type;
       video.appendChild(source);
+      
+      // Load the new source
       video.load();
       return true;
     }
     
     return false;
-  }, []);
+  }, [safePause]);
 
   // Handle video playback
   const handlePlay = useCallback(async () => {
@@ -102,7 +145,7 @@ export default function IntroVideo() {
           video.removeEventListener('loadeddata', onLoadedData);
         };
         
-        const onError = () => {
+        const onError = async () => {
           debug(`[${instance}] Error loading video source`, {
             error: video.error,
             readyState: video.readyState,
@@ -110,14 +153,14 @@ export default function IntroVideo() {
             currentSrc: video.currentSrc
           });
           
+          // Clean up the listener
+          video.removeEventListener('error', onError as any);
+          
           // Try next format if available
-          if (!tryNextFormat(video, instance)) {
+          if (!(await tryNextFormat(video, instance))) {
             debug(`[${instance}] No more formats to try`);
             setVideoAvailable(false);
           }
-          
-          // Clean up the listener
-          video.removeEventListener('error', onError as any);
         };
         
         video.addEventListener('loadeddata', onLoadedData);
@@ -138,39 +181,29 @@ export default function IntroVideo() {
         networkState: video.networkState
       });
       
-      // Try to play the video
-      const playPromise = video.play();
+      // Use safePlay to handle the play promise
+      const played = await safePlay(video);
       
-      if (playPromise !== undefined) {
-        await playPromise
-          .then(() => {
-            debug(`[${instance}] Video started playing successfully`, {
-              currentTime: video.currentTime,
-              duration: video.duration,
-              paused: video.paused
-            });
-            setIsPlaying(true);
-          })
-          .catch(error => {
-            debug(`[${instance}] Error in play promise:`, {
-              error: error.name,
-              message: error.message,
-              muted: video.muted,
-              readyState: video.readyState
-            });
-            
-            if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
-              // If autoplay is not allowed, mute and try again
-              debug(`[${instance}] Retrying with muted audio`);
-              video.muted = true;
-              setIsMuted(true);
-              return video.play().then(() => {
-                debug(`[${instance}] Video started playing after muting`);
-                setIsPlaying(true);
-              });
-            }
-            throw error;
-          });
+      if (played) {
+        debug(`[${instance}] Video started playing successfully`, {
+          currentTime: video.currentTime,
+          duration: video.duration,
+          paused: video.paused
+        });
+        setIsPlaying(true);
+      } else {
+        // If autoplay is not allowed, mute and try again
+        debug(`[${instance}] Retrying with muted audio`);
+        video.muted = true;
+        setIsMuted(true);
+        
+        if (await safePlay(video)) {
+          debug(`[${instance}] Video started playing after muting`);
+          setIsPlaying(true);
+        } else {
+          debug(`[${instance}] Failed to start video playback`);
+          throw new Error('Failed to start video playback');
+        }
       }
     } catch (error) {
       console.error('Error handling video playback:', error);
@@ -414,6 +447,27 @@ export default function IntroVideo() {
       });
     }
   }, []);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      const video = videoRef.current;
+      if (video) {
+        const cleanup = async () => {
+          try {
+            await safePause(video);
+            while (video.firstChild) {
+              video.removeChild(video.firstChild);
+            }
+            video.load();
+          } catch (error) {
+            console.error('Error cleaning up video:', error);
+          }
+        };
+        cleanup();
+      }
+    };
+  }, [safePause]);
 
   // Don't render anything if video is not available or not visible
   if (!isVisible) return null;
