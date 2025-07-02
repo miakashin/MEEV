@@ -111,7 +111,7 @@ export default function IntroVideo() {
     debug(`[${instance}] Setting up video source`);
 
     // Function to load a specific video format
-    const loadVideoSource = async (formatIndex: number) => {
+    const loadVideoSource = async (formatIndex: number): Promise<boolean> => {
       if (formatIndex >= videoFormats.length) {
         debug(`[${instance}] No more video formats to try`);
         setVideoAvailable(false);
@@ -166,7 +166,16 @@ export default function IntroVideo() {
         return loadVideoSource(formatIndex + 1);
       }
     };
-    return false;
+
+    // Start loading the first format
+    loadVideoSource(0).catch(error => {
+      console.error(`[${instance}] Failed to load any video format:`, error);
+    });
+
+    // Cleanup function
+    return () => {
+      // Cleanup if needed
+    };
   }, [safePause]);
 
   // Handle video playback
