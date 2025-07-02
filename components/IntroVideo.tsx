@@ -2,6 +2,13 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 
+// Debug logger
+const debug = (message: string, data?: any) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[IntroVideo] ${message}`, data || '');
+  }
+};
+
 export default function IntroVideo() {
   const [isVisible, setIsVisible] = useState(true);
   const [isMuted, setIsMuted] = useState(true); // Start muted by default
@@ -9,20 +16,127 @@ export default function IntroVideo() {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cleanupRef = useRef<() => void>();
+  
+  // Unique ID for this component instance
+  const instanceId = useRef(`video-${Math.random().toString(36).substr(2, 9)}`);
+  
+  debug(`Component mounted with ID: ${instanceId.current}`);
+
+  // List of supported video formats in order of preference
+  const videoFormats = [
+    { type: 'video/mp4', src: '/videos/intro.mp4' },
+    { type: 'video/webm', src: '/videos/intro.webm' },
+    { type: 'video/ogg', src: '/videos/intro.ogv' }
+  ];
+
+  // Current format being tried
+  const currentFormatIndex = useRef(0);
+  
+  // Try loading the next available video format
+  const tryNextFormat = useCallback((video: HTMLVideoElement, instance: string) => {
+    currentFormatIndex.current++;
+    
+    if (currentFormatIndex.current < videoFormats.length) {
+      const { type, src } = videoFormats[currentFormatIndex.current];
+      debug(`[${instance}] Trying next video format:`, { type, src });
+      
+      const source = document.createElement('source');
+      source.src = src;
+      source.type = type;
+      
+      // Clear existing sources
+      while (video.firstChild) {
+        video.removeChild(video.firstChild);
+      }
+      
+      video.appendChild(source);
+      video.load();
+      return true;
+    }
+    
+    return false;
+  }, []);
 
   // Handle video playback
   const handlePlay = useCallback(async () => {
     const video = videoRef.current;
-    if (!video) return;
+    const instance = instanceId.current;
+    
+    debug(`[${instance}] handlePlay called`, { 
+      videoReady: !!video,
+      currentSrc: video?.currentSrc,
+      readyState: video?.readyState,
+      networkState: video?.networkState,
+      error: video?.error,
+      formatIndex: currentFormatIndex.current
+    });
+    
+    if (!video) {
+      debug(`[${instance}] Video ref not available`);
+      return;
+    }
 
     try {
       // Set video source if not already set
-      if (!video.src) {
-        video.src = '/videos/intro.mp4';
+      if (!video.hasChildNodes()) {
+        const { type, src } = videoFormats[currentFormatIndex.current];
+        debug(`[${instance}] Setting initial video source:`, { type, src });
+        
+        const source = document.createElement('source');
+        source.src = src;
+        source.type = type;
+        
+        video.appendChild(source);
+        
+        // Add event listeners for source loading
+        const onLoadedData = () => {
+          debug(`[${instance}] Video loaded successfully`, {
+            readyState: video.readyState,
+            videoWidth: video.videoWidth,
+            videoHeight: video.videoHeight,
+            duration: video.duration,
+            currentSrc: video.currentSrc
+          });
+          
+          // Clean up the listener
+          video.removeEventListener('loadeddata', onLoadedData);
+        };
+        
+        const onError = () => {
+          debug(`[${instance}] Error loading video source`, {
+            error: video.error,
+            readyState: video.readyState,
+            networkState: video.networkState,
+            currentSrc: video.currentSrc
+          });
+          
+          // Try next format if available
+          if (!tryNextFormat(video, instance)) {
+            debug(`[${instance}] No more formats to try`);
+            setVideoAvailable(false);
+          }
+          
+          // Clean up the listener
+          video.removeEventListener('error', onError as any);
+        };
+        
+        video.addEventListener('loadeddata', onLoadedData);
+        video.addEventListener('error', onError as any);
+        
+        // Load the video
+        video.load();
       }
 
-      // Set initial volume
+      // Set initial volume and mute state
       video.volume = 0.5;
+      video.muted = isMuted;
+      
+      debug(`[${instance}] Attempting to play video`, {
+        muted: video.muted,
+        paused: video.paused,
+        readyState: video.readyState,
+        networkState: video.networkState
+      });
       
       // Try to play the video
       const playPromise = video.play();
@@ -30,14 +144,28 @@ export default function IntroVideo() {
       if (playPromise !== undefined) {
         await playPromise
           .then(() => {
+            debug(`[${instance}] Video started playing successfully`, {
+              currentTime: video.currentTime,
+              duration: video.duration,
+              paused: video.paused
+            });
             setIsPlaying(true);
           })
           .catch(error => {
+            debug(`[${instance}] Error in play promise:`, {
+              error: error.name,
+              message: error.message,
+              muted: video.muted,
+              readyState: video.readyState
+            });
+            
             if (error.name === 'NotAllowedError' || error.name === 'AbortError') {
               // If autoplay is not allowed, mute and try again
+              debug(`[${instance}] Retrying with muted audio`);
               video.muted = true;
               setIsMuted(true);
               return video.play().then(() => {
+                debug(`[${instance}] Video started playing after muting`);
                 setIsPlaying(true);
               });
             }
@@ -57,8 +185,11 @@ export default function IntroVideo() {
     setIsPlaying(false);
   }, []);
 
-  // Handle video errors with proper TypeScript types
+  // Handle video errors with proper TypeScript types and detailed logging
   const handleError = useCallback((event: Event | React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    const instance = instanceId.current;
+    debug(`[${instance}] handleError called`, { eventType: event?.type });
+    
     try {
       const target = (event.target || event.currentTarget) as HTMLVideoElement;
       const error = target.error;
@@ -73,16 +204,22 @@ export default function IntroVideo() {
       
       // Prepare error information
       const errorInfo = {
+        instanceId: instance,
         code: error?.code,
         message: error?.message || 'Unknown error',
         eventType: event?.type,
         currentSrc: target?.currentSrc,
         networkState: target?.networkState,
         readyState: target?.readyState,
-        errorState: error?.code !== undefined ? errorStates[error.code] || `Unknown error code: ${error.code}` : 'No error code'
+        errorState: error?.code !== undefined ? 
+          (errorStates[error.code] || `Unknown error code: ${error.code}`) : 
+          'No error code',
+        timestamp: new Date().toISOString(),
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a'
       };
       
-      console.error('Video error:', errorInfo);
+      // Log detailed error information
+      console.error(`[${instance}] Video error:`, errorInfo);
       
       // Log to error tracking service if available
       if (typeof window !== 'undefined' && (window as any).Sentry) {
@@ -90,6 +227,18 @@ export default function IntroVideo() {
           extra: errorInfo
         });
       }
+      
+      // Log additional debugging information
+      debug(`[${instance}] Video element state on error:`, {
+        paused: target?.paused,
+        ended: target?.ended,
+        seeking: target?.seeking,
+        buffered: target?.buffered?.length ? target.buffered.length : 0,
+        videoWidth: target?.videoWidth,
+        videoHeight: target?.videoHeight,
+        duration: target?.duration,
+        currentTime: target?.currentTime
+      });
     } catch (error) {
       console.error('Error in error handler:', error);
     } finally {
@@ -122,37 +271,89 @@ export default function IntroVideo() {
 
   // Set up video element
   useEffect(() => {
+    const instance = instanceId.current;
     const video = videoRef.current;
-    if (!video) return;
+    
+    debug(`[${instance}] Setting up video element`);
+    
+    if (!video) {
+      debug(`[${instance}] Video ref not available during setup`);
+      return;
+    }
 
-    // Event handler wrappers for proper TypeScript types
-    const handlePlayEvent = () => setIsPlaying(true);
-    const handlePauseEvent = () => setIsPlaying(false);
-    const handleEndedEvent = () => handleEnded();
-    const handleErrorEvent = (e: Event) => handleError(e);
+    // Event handler wrappers with logging
+    const handlePlayEvent = () => {
+      debug(`[${instance}] Play event triggered`);
+      setIsPlaying(true);
+    };
+    
+    const handlePauseEvent = () => {
+      debug(`[${instance}] Pause event triggered`);
+      setIsPlaying(false);
+    };
+    
+    const handleEndedEvent = () => {
+      debug(`[${instance}] Video ended`);
+      handleEnded();
+    };
+    
+    const handleErrorEvent = (e: Event) => {
+      debug(`[${instance}] Error event received`);
+      handleError(e);
+    };
+    
+    // Track all event listeners for proper cleanup
+    const eventListeners: [string, EventListenerOrEventListenerObject][] = [
+      ['play', handlePlayEvent],
+      ['playing', () => debug(`[${instance}] Playing event triggered`)],
+      ['pause', handlePauseEvent],
+      ['ended', handleEndedEvent],
+      ['error', handleErrorEvent],
+      ['waiting', () => debug(`[${instance}] Waiting for data`)],
+      ['canplay', () => debug(`[${instance}] Can play through`)],
+      ['stalled', () => debug(`[${instance}] Media loading stalled`)]
+    ];
 
-    // Add event listeners with proper types
-    video.addEventListener('play', handlePlayEvent);
-    video.addEventListener('pause', handlePauseEvent);
-    video.addEventListener('ended', handleEndedEvent);
-    video.addEventListener('error', handleErrorEvent);
+    // Add all event listeners
+    eventListeners.forEach(([event, handler]) => {
+      video.addEventListener(event, handler);
+    });
+    
+    debug(`[${instance}] Added ${eventListeners.length} event listeners`);
 
     // Start playback
-    handlePlay();
+    debug(`[${instance}] Starting video playback`);
+    handlePlay().catch(error => {
+      debug(`[${instance}] Error during initial play:`, error);
+      handleError({ target: video, type: 'playback-error' } as any);
+    });
 
     // Cleanup function
     cleanupRef.current = () => {
+      const cleanupInstance = instanceId.current;
+      debug(`[${cleanupInstance}] Cleaning up video element`);
+      
       try {
-        video.pause();
-        video.removeEventListener('play', handlePlayEvent);
-        video.removeEventListener('pause', handlePauseEvent);
-        video.removeEventListener('ended', handleEndedEvent);
-        video.removeEventListener('error', handleErrorEvent);
+        // Pause video
+        if (!video.paused) {
+          debug(`[${cleanupInstance}] Pausing video during cleanup`);
+          video.pause();
+        }
         
-        // Don't reset the source to prevent potential errors
-        // The browser will handle cleanup when the element is removed
+        // Reset video element
+        debug(`[${cleanupInstance}] Resetting video source`);
+        video.removeAttribute('src');
+        video.load();
+        
+        // Remove all event listeners
+        eventListeners.forEach(([event, handler]) => {
+          video.removeEventListener(event, handler);
+        });
+        
+        debug(`[${cleanupInstance}] Removed all event listeners`);
+        
       } catch (error) {
-        console.error('Error during cleanup:', error);
+        console.error(`[${cleanupInstance}] Error during cleanup:`, error);
       }
     };
 
@@ -182,7 +383,24 @@ export default function IntroVideo() {
   }, []);
 
   // Don't render anything if video is not available or not visible
-  if (!isVisible || !videoAvailable) return null;
+  if (!isVisible) return null;
+
+  if (!videoAvailable) {
+    return (
+      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+        <div className="text-white text-center p-8">
+          <h2 className="text-2xl font-bold mb-4">Video Unavailable</h2>
+          <p className="mb-4">We're having trouble loading the video. This might be due to an unsupported format or network issues.</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`fixed inset-0 z-50 bg-black transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
@@ -194,9 +412,13 @@ export default function IntroVideo() {
         autoPlay
         preload="auto"
         onError={handleError}
+        onCanPlayThrough={(e) => debug(`[${instanceId.current}] Video can play through`, e)}
+        onStalled={(e) => debug(`[${instanceId.current}] Video stalled`, e)}
+        onWaiting={(e) => debug(`[${instanceId.current}] Video waiting`, e)}
+        onLoadStart={(e) => debug(`[${instanceId.current}] Video load started`, e)}
       >
-        <source src="/videos/intro.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
+        {/* Sources will be added dynamically */}
+        <p>Your browser does not support the video tag.</p>
       </video>
       
       {/* Mute/Unmute Button */}
