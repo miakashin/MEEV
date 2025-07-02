@@ -560,20 +560,7 @@ export default function IntroVideo() {
   // Don't render anything if not visible
   if (!isVisible) return null;
 
-  // Debug information
-  const debugInfo = {
-    isPlaying,
-    isMuted,
-    videoAvailable,
-    currentFormat: videoFormats[currentFormatIndex.current]?.src || 'none',
-    readyState: videoRef.current?.readyState,
-    networkState: videoRef.current?.networkState,
-    error: videoRef.current?.error,
-    currentSrc: videoRef.current?.currentSrc,
-    videoWidth: videoRef.current?.videoWidth,
-    videoHeight: videoRef.current?.videoHeight,
-    duration: videoRef.current?.duration
-  };
+
 
   if (!videoAvailable) {
     return (
@@ -581,11 +568,7 @@ export default function IntroVideo() {
         <div className="text-white text-center p-8">
           <h2 className="text-2xl font-bold mb-4">Video Unavailable</h2>
           <p className="mb-4">We're having trouble loading the video. This might be due to an unsupported format or network issues.</p>
-          <div className="bg-gray-800 p-4 rounded-lg text-left text-sm mb-4 overflow-auto max-h-40">
-            <pre className="whitespace-pre-wrap">
-              {JSON.stringify(debugInfo, null, 2)}
-            </pre>
-          </div>
+
           <button 
             onClick={() => window.location.reload()}
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
@@ -599,15 +582,7 @@ export default function IntroVideo() {
 
   return (
     <div className={`fixed inset-0 z-50 bg-black transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-      {/* Debug overlay */}
-      <div className="absolute bottom-4 left-4 z-50 bg-black bg-opacity-70 text-white p-4 rounded-lg text-xs max-w-md max-h-48 overflow-auto">
-        <h3 className="font-bold mb-2">Video Debug Info:</h3>
-        <pre className="whitespace-pre-wrap text-xs">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
-      </div>
-
-      {/* Video element */}
+{/* Video element */}
       <div className="relative w-full h-full">
         <video
           ref={videoRef}
