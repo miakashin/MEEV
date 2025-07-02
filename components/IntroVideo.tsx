@@ -301,17 +301,45 @@ export default function IntroVideo() {
       debug(`[${instance}] Error event received`);
       handleError(e);
     };
+
+    const handleCanPlay = () => {
+      debug(`[${instance}] Can play video`, {
+        readyState: video.readyState,
+        networkState: video.networkState,
+        currentSrc: video.currentSrc,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight
+      });
+      
+      // Force play if not already playing
+      if (video.paused) {
+        debug(`[${instance}] Video is paused, attempting to play`);
+        video.play().catch(error => {
+          debug(`[${instance}] Error in canplay play():`, error);
+        });
+      }
+    };
     
     // Track all event listeners for proper cleanup
     const eventListeners: [string, EventListenerOrEventListenerObject][] = [
       ['play', handlePlayEvent],
-      ['playing', () => debug(`[${instance}] Playing event triggered`)],
+      ['playing', () => debug(`[${instance}] Playing event triggered`, {
+        currentTime: video.currentTime,
+        duration: video.duration
+      })],
       ['pause', handlePauseEvent],
       ['ended', handleEndedEvent],
       ['error', handleErrorEvent],
       ['waiting', () => debug(`[${instance}] Waiting for data`)],
-      ['canplay', () => debug(`[${instance}] Can play through`)],
-      ['stalled', () => debug(`[${instance}] Media loading stalled`)]
+      ['canplay', handleCanPlay],
+      ['canplaythrough', () => debug(`[${instance}] Can play through entire video`)],
+      ['stalled', () => debug(`[${instance}] Media loading stalled`)],
+      ['loadstart', () => debug(`[${instance}] Starting to load media`)],
+      ['loadedmetadata', () => debug(`[${instance}] Loaded metadata`, {
+        duration: video.duration,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight
+      })]
     ];
 
     // Add all event listeners
@@ -321,15 +349,18 @@ export default function IntroVideo() {
     
     debug(`[${instance}] Added ${eventListeners.length} event listeners`);
 
-    // Start playback
-    debug(`[${instance}] Starting video playback`);
-    handlePlay().catch(error => {
-      debug(`[${instance}] Error during initial play:`, error);
-      handleError({ target: video, type: 'playback-error' } as any);
-    });
+    // Start playback with a small delay to ensure the element is in the DOM
+    const playTimeout = setTimeout(() => {
+      debug(`[${instance}] Starting video playback`);
+      handlePlay().catch(error => {
+        debug(`[${instance}] Error during initial play:`, error);
+        handleError({ target: video, type: 'playback-error' } as any);
+      });
+    }, 100);
 
     // Cleanup function
     cleanupRef.current = () => {
+      clearTimeout(playTimeout);
       const cleanupInstance = instanceId.current;
       debug(`[${cleanupInstance}] Cleaning up video element`);
       
@@ -342,7 +373,9 @@ export default function IntroVideo() {
         
         // Reset video element
         debug(`[${cleanupInstance}] Resetting video source`);
-        video.removeAttribute('src');
+        while (video.firstChild) {
+          video.removeChild(video.firstChild);
+        }
         video.load();
         
         // Remove all event listeners
@@ -410,15 +443,40 @@ export default function IntroVideo() {
         playsInline
         muted={isMuted}
         autoPlay
+        loop={false}
         preload="auto"
+        width="100%"
+        height="100%"
+        style={{
+          backgroundColor: 'black',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 50
+        }}
         onError={handleError}
-        onCanPlayThrough={(e) => debug(`[${instanceId.current}] Video can play through`, e)}
+        onCanPlayThrough={(e) => {
+          debug(`[${instanceId.current}] Video can play through`, e);
+          const video = e.target as HTMLVideoElement;
+          video.play().catch(err => debug(`[${instanceId.current}] Error in canplaythrough play:`, err));
+        }}
         onStalled={(e) => debug(`[${instanceId.current}] Video stalled`, e)}
         onWaiting={(e) => debug(`[${instanceId.current}] Video waiting`, e)}
         onLoadStart={(e) => debug(`[${instanceId.current}] Video load started`, e)}
+        onLoadedData={(e) => {
+          debug(`[${instanceId.current}] Video loaded data`, {
+            readyState: (e.target as HTMLVideoElement).readyState,
+            networkState: (e.target as HTMLVideoElement).networkState
+          });
+        }}
       >
         {/* Sources will be added dynamically */}
-        <p>Your browser does not support the video tag.</p>
+        <p className="text-white absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          Your browser does not support the video tag.
+        </p>
       </video>
       
       {/* Mute/Unmute Button */}
