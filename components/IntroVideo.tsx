@@ -26,12 +26,11 @@ export default function IntroVideo() {
 
   // List of supported video formats in order of preference
   const videoFormats = [
-    // Encode spaces in the filename
+    // Use the existing intro.mp4 file
+    { type: 'video/mp4', src: '/videos/intro.mp4' },
+    // Keep the other formats as fallbacks in case needed
     { type: 'video/mp4', src: '/videos/Clean%20Outlines%20Logo%20Reveal_1080p.mp4' },
-    // Also try with spaces replaced by hyphens
-    { type: 'video/mp4', src: '/videos/Clean-Outlines-Logo-Reveal_1080p.mp4' },
-    // Fallback to a simpler filename if exists
-    { type: 'video/mp4', src: '/videos/intro.mp4' }
+    { type: 'video/mp4', src: '/videos/Clean-Outlines-Logo-Reveal_1080p.mp4' }
   ];
 
   // Current format being tried
